@@ -1,0 +1,49 @@
+name: Compile Typst to PDF
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:  
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile Typst document
+        uses: typst-community/setup-typst@v4
+        with:
+          typst-version: latest
+
+      - name: Build PDF
+        run: typst compile main.typ main.pdf
+
+      - name: Upload PDF as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: main-pdf
+          path: main.pdf
+
+      - name: Update latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest PDF
+          body: |
+            Automatically compiled PDF from the latest commit on main.
+            
+            Last updated: ${{ github.event.head_commit.timestamp }}
+          files: main.pdf
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
