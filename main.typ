@@ -18,6 +18,16 @@
 
 #outline(indent: auto, depth: 2)
 
+
+= Introduction
+
+This document presents a unified framework for understanding several neuron addition methods in growing neural networks. We show that methods such as TINY, GradMax, SENN, and NeST can all be understood as special cases of a common optimization objective, differing only in their choice of metric and constraints.
+
+
+= Preliminaries
+
+#include "subtyp/properties.typ"
+
 #include "subtyp/objective_methods.typ"
 
 #bibliography("references.bib", style: "typst/title-only.csl")

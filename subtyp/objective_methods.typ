@@ -1,14 +1,5 @@
 #import "../typst/commands.typ": *
 
-= Introduction
-
-This document presents a unified framework for understanding several neuron addition methods in growing neural networks. We show that methods such as TINY, GradMax, SENN, and NeST can all be understood as special cases of a common optimization objective, differing only in their choice of metric and constraints.
-
-
-= Preliminaries
-
-#include "properties.typ"
-
 
 = Notations
 
@@ -319,7 +310,7 @@ We now show that all methods can be understood as special cases of a common opti
   *Unified objective for neuron addition.* All neuron addition methods studied in this document can be derived from the following optimization problem:
   $ Fanin^*, Fanout^* 
   &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_norm>\
-  &prop argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(Bottleneck times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_scalarp> $ <eq:unified_objective>
+  &prop argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_scalarp> $ <eq:unified_objective>
   
   where:
   - $T in (n, cp)$ is the target (gradient $Gradpreact$ or residual gradient $Bottleneck$)
@@ -385,6 +376,7 @@ We now prove that each method can be derived from the unified objective @eq:unif
 #proposition[
   *GradMax from unified objective.* Setting $T = Gradpreact$, $covpostact_(-2) = I_(cm)$, $covgrad = I_(cp)$, with the constraint $Fanout trans(Fanout) = I_(cext)$, and then setting $Fanin = 0$ after optimization yields GradMax.
 ]<prop:gradmax_derivation>
+This proof is largely inspired by the work from @verbockhavenSpottingExpressivityBottlenecks2025.
 
 #proof[
   Starting from @eq:unified_objective_scalarp with $covgrad = I_(cp)$ and $T = Gradpreact$, the objective is:
