@@ -326,17 +326,22 @@ We now show that all methods can be understood as special cases of a common opti
       stroke: 0.5pt,
       align: center,
       table.header(
-        [*Method*], [$T$], [$covpostact_(-2)$], [$covgrad$], [*Extra constraints*], [$Fanin$], [$Fanout$], [$postactext perp postact(l:-1)$], [$sigma$]
+        [*Method*], [$T$], [$covpostact_(-1)^"ext"$], [$covgrad$], [*Extra constraints*], [$Fanin$], [$Fanout$], [$postactext perp postact(l:-1)$], [$sigma$]
       ),
-      [Full], [$Bottleneck$], [$covpostact_(-2)$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Any],
-      [TINY (proj.)], [$Bottleneck$], [$covpostact_(-2)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Identity],
-      [TINY (no proj.)], [$Gradpreact$], [$covpostact_(-2)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
-      [GradMax], [$Gradpreact$], [$I_(cm)$], [$I_(cp)$], [$Fanout trans(Fanout) = I_(cext)$], [$0$], [$Fanout^*$], [#sym.times], [Any],
-      [SENN], [$Bottleneck$], [$covpostact_(-2)$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$0$], [#sym.checkmark], [Any],
-      [NeST], [$Gradpreact$], [$covpostact_(-2)$], [$I_(cp)$], [$norm(Fanin)_0 = norm(Fanout)_0 = 1$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
+      [Full], [$Bottleneck$], [$covpostact_(-1)^"ext"$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Any],
+      [TINY (proj.)], [$Bottleneck$], [$Fanin covpostact_(-1) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Identity],
+      [TINY (no proj.)], [$Gradpreact$], [$Fanin covpostact_(-1) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
+      [GradMax], [$Gradpreact$], [$Fanin trans(Fanin)$], [$I_(cp)$], [$trans(Fanin)Fanin=I_(cext); Fanout trans(Fanout) = I_(cext)$], [$0$], [$Fanout^*$], [#sym.times], [Any],
+      [SENN], [$Bottleneck$], [$covpostact_(-1)^"ext"$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$0$], [#sym.checkmark], [Any],
+      [NeST], [$Gradpreact$], [$Fanin covpostact_(-1) trans(Fanin)$], [$I_(cp)$], [$norm(Fanin)_0 = norm(Fanout)_0 = 1$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
     ),
     caption: [Neuron addition methods as special cases of the unified objective @eq:unified_objective.]
   ) <tab:comparison>
+
+Notes:
+- Assuming $covpostact_(-1)^"ext" = Fanin covpostact_(-1) trans(Fanin)$ in @eq:unified_objective_scalarp is equivalent to linearizing $sigma$ around $0$ in @eq:unified_objective_norm.
+- The GradMax assumption $covpostact_(-1)^"ext" = Fanin trans(Fanin)$ is like assuming the input data is whitened in addition to linearizing $sigma$ around $0$.
+
 ]<thm:unified_objective>
 
 #proof[
@@ -365,8 +370,9 @@ We now prove that each method can be derived from the unified objective @eq:unif
   With $covgrad = I_(cp)$, we have $isqrtS = I_(cp)$. The unified objective becomes:
   $ argmin(Fanin\, Fanout) frob(T - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout)) $
   
-  Using the linear approximation $sigma approx "Identity"$:
-  $ argmin(Fanin\, Fanout) frob(T - Postact(l:-2) times_(cm) trans(Fanin) times_(cext) trans(Fanout)) $
+  Using the linear approximation $sigma approx "Identity"$ (which is equivalent to $covpostact_(-1)^"ext" = Fanin covpostact_(-2) trans(Fanin)$), this becomes:
+    $
+   argmin(Fanin\, Fanout) frob(T - Postact(l:-2) times_(cm) trans(Fanin) times_(cext) trans(Fanout)) $
   
   With $T = Bottleneck$, this is exactly @eq:tiny_projection_optimization. With $T = Gradpreact$, this is TINY without projection.
 ]
@@ -380,8 +386,9 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
 
 #proof[
   Starting from @eq:unified_objective_scalarp with $covgrad = I_(cp)$ and $T = Gradpreact$, the objective is:
-  $ argmax(Fanin\, Fanout\, frob(trans(Fanout)) <= 1)& scalarp(Bottleneck, Postactext times_(cext) trans(Fanout))$
-  Here we replace $Postactext$ with its linear approximation $Postact(l:-2) trans(Fanin)$. However this approximation is not a strong assumption as it is only used during backward at $sigma(Postact(l: -2) trans(Fanin)) = sigma(0)$ as GradMax set $Fanin = 0$. Therefore as long as $sigma'(0) = 1$ the approximation is exact. We get:
+  $ argmax(Fanin\, Fanout\, frob(Fanin trans(Fanin) trans(Fanout)) <= 1)& scalarp(Bottleneck, Postactext times_(cext) trans(Fanout)) $
+  Using that $trans(Fanin) Fanin = I_(cext)$ we have that $frob(Fanin trans(Fanin) trans(Fanout)) = frob(trans(Fanin) trans(Fanout))$.
+  In addition, we replace $Postactext$ with its linear approximation $Postact(l:-2) trans(Fanin)$. However this approximation is not a strong assumption as it is only used during backward at $sigma(Postact(l: -2) trans(Fanin)) = sigma(0)$ as GradMax set $Fanin = 0$. Therefore as long as $sigma'(0) = 1$ the approximation is exact. We get:
 
   $
   = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(Gradpreact, 1/n Postact(l:-2) trans(Fanin) times_(cext) trans(Fanout)) \
@@ -434,7 +441,7 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
 === Derivation of NeST
 
 #proposition[
-  *NeST from unified objective.* Setting $T = Gradpreact$, $covpostact_(-2) = I_(cm)$, $covgrad = I_(cp)$, with the sparsity constraint $norm(Fanin)_0 = norm(Fanout)_0 = 1$ yields NeST.
+  *NeST from unified objective.* Setting $T = Gradpreact$, $covgrad = I_(cp)$, linearizing $sigma$ and adding the sparsity constraint $norm(Fanin)_0 = norm(Fanout)_0 = 1$ yields NeST.
 ]<prop:nest_derivation>
 
 #proof[
