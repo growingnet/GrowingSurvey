@@ -185,7 +185,7 @@ Using the KFAC @dangelKroneckerfactoredApproximateCurvature2025 approximation $F
   The *SENN criterion* measures the natural gradient norm:
   $ etasenn(vec(Fanout, W)) &:= scalarp( nabla_vec(Fanout, W)loss(f), F^(-1) nabla_vec(Fanout, W) loss(f))_2\
   #flushl[Using KFAC:]
-  &= scalarp( nabla_vec(Fanout, W) loss(f) covpostact^"conc"_(-1), covgrad nabla_vec(Fanout, W) loss(f))_2
+  &= scalarp( nabla_vec(Fanout, W) loss(f) (covpostact^"conc"_(-1))^(-1), covgrad^(-1) nabla_vec(Fanout, W) loss(f))_2
    $
   where:
   - $covpostact^"conc"_( -1)$ is the covariance of concatenated activations $vec(postactext, postact(l:-1))$
