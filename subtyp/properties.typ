@@ -36,8 +36,7 @@
 #proof[
   Let $I := argmax(d in F|norm(f(d)) <= 1) scalarp(y, f(d))$ and $R := argmax(d in F|norm(f(d)) = 1) scalarp(y, f(d))$.
 
-  - By definition: $R subset I$.
-  - Let show that $I subset R$, let $d^* in I$, let show that $norm(f(d^*)) = 1$.
+  - Let us show that $I subset R$. Let $d^* in I$; we show that $norm(f(d^*)) = 1$.
 
 
     Let $x in F$ with $scalarp(f(x), y) != 0$ (exists by hypothesis). Let $x' := sign(scalarp(f(x), y))x$. Then $scalarp(f(x'), y) > 0$.
@@ -46,8 +45,10 @@
     Let $lambda := 1 / norm(f(d^*)) > 0$ as $abs(lambda) <= 1$:
     $ scalarp(y, f(d^*)) >= lambda scalarp(y, f(d^*)) = scalarp(y, f(lambda d^*)) $ by scaling equivariance of $f$.
     By maximality of $d^*$ in $I$, this is an equality hence $norm(f(d^*)) = 1$.
-  Therefore $d^* in R$ and $I subset R$.
+    Therefore $d^* in R$ and $I subset R$.
 
+  - Let us show that $R subset I$. Let $d^* in R$; since $I subset R$, $d^*$ maximizes the score over ${d in F | norm(f(d)) <= 1}$, and as $norm(f(d^*)) <= 1$ we have that $d^* in I$. We conclude that $R subset I$.
+  
   For the second equality, we can do the same reasoning using that $norm(y - f(x))^2 = norm(y)^2 - 2 scalarp(y, f(x)) + norm(f(x))^2$.
 ]
 
@@ -61,14 +62,14 @@
 
     We have that:
     $ 
-        argmin(x in F) norm(y - f(x)) = {scalarp(y, d^*) d^* |  d^* in argmax(d in F | norm(f(d)) <= 1) scalarp(y, f(d)) }
+        argmin(x in F) norm(y - f(x)) = {scalarp(y, f(d^*)) d^* |  d^* in argmax(d in F | norm(f(d)) <= 1) scalarp(y, f(d)) }
      $ <eq:fixed_norm_optimisation_equivalence>
 ] <lemma:argmin_norm_to_argmax_scalarp>
 
 #proof[
 - If $forall x in F, scalarp(f(x), y) = 0$, then both sides of <eq:fixed_norm_optimisation_equivalence> equal ${0}$.
 - If $exists x in F, scalarp(f(x), y) != 0$, by @lemma:argument_scaling, we have that in left hand side we can add $norm(f(x)) != 0$ and in the right hand side of <eq:fixed_norm_optimisation_equivalence>, we can replace $<= 1$ by $= 1$.
-  Let's proceed by double inclusion.
+  Let's proceed by set equality.
   $ argmin(x in F | norm(f(x)) != 0) norm(y - f(x)) &= argmin(x in F) (norm(y)^2 - 2scalarp(y, f(x))) + norm(f(x))^2 \
   &= argmin(x in F | norm(f(x)) != 0) ( - 2scalarp(y, f(x)) + norm(f(x))^2 )\
   &= argmin(x in F | norm(f(x)) != 0) ( - 2scalarp(y, norm(f(x)) f(x) / norm(f(x))) + norm(f(x))^2 ) \
@@ -81,7 +82,7 @@
   $ argmin(x in F | norm(f(x)) != 0) norm(y - f(x)) 
   &= argmin(x in F | norm(f(x)) != 0) ( - scalarp(y, f(d))^2 )\
   &= argmax(x in F | norm(f(x)) != 0) scalarp(y, f(d)) \
-  &= { scalarp(y, d^*) d^* |  d^* in argmax(d in F | norm(f(d)) = 1) scalarp(y, f(d)) }
+  &= { scalarp(y, f(d^*)) d^* |  d^* in argmax(d in F | norm(f(d)) = 1) scalarp(y, f(d)) }
   $
 ]
 

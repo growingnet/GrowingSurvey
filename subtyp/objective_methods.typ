@@ -5,7 +5,7 @@
 
 == Linear Algebra
 
-- $scalarp(.,.)$ is a sclar product and $norm(.)$ the associated norm.
+- $scalarp(.,.)$ is a scalar product and $norm(.)$ the associated norm.
 - $frob(.)$ is the Frobenius norm.
 - $times_k$ is to indicate multiplication over a common dimension $k$.
 - $pinv(.)$ is the Moore-Penrose pseudoinverse.
@@ -127,9 +127,9 @@ TINY approximates $deltas(x) approx sigma'(0) dot Fanout times_(cext) Fanin time
   Without projection, replace $Bottleneck$ with $Gradpreact$.
 ]
 #proof[
-  We minimize the first-order loss decrease, by @corollary:argmin_norm_to_argmax_scalarp:
+  We maximize the first-order loss decrease, by @corollary:argmin_norm_to_argmax_scalarp:
   $ argmin(Fanin\,Fanout\; norm(deltas) <= 1)scalarp(nabla_(preact()) loss(preact()), deltas)
-  prop argmin(Fanin\,Fanout) norm(nabla_(preact()) loss(preact())-  deltas)
+  prop argmin(Fanin\,Fanout) norm(-nabla_(preact()) loss(preact())-  deltas)
   $
   Then substituting the linearized $deltas$ and using batched notation gives the result.
 ]
@@ -143,12 +143,12 @@ GradMax @evciGradMaxGrowingNeural2021 takes a different approach: initialize new
 
 With $Fanin = 0$ and $sigma(0) = 0$, we have $postactext = 0$, so $nabla_Fanout loss(f) = 0$. The loss decrease after one gradient step on $(Fanin, Fanout)$ is:
 $ loss(f_(Fanin + dFanin)) approx loss(f) - frob(nabla_Fanin loss(f))^2 - frob(nabla_Fanout loss(f))^2 $
-As $nabla_Fanin loss(f) = 0$ at initialization, GradMax maximizes $frob(nabla_Fanout loss(f))$.
+As $nabla_Fanout loss(f) = 0$ at initialization, GradMax maximizes $frob(nabla_Fanin loss(f))$. 
 
 #proposition[
   *GradMax optimization problem.* GradMax solves:
-  $ Fanout^* = argmax(frob(Fanout) <= 1) frob(nabla_Fanin loss(f)) $
-  such that $Fanout trans(Fanout) = I_cext$.
+  $ Fanout^* = argmax(frob(Fanout)^2 <= cext) frob(nabla_Fanin loss(f)) $
+  such that $trans(Fanout) times_cext Fanout = I_cext$. 
 ]
 
 === Simplified Objective
@@ -161,11 +161,14 @@ As $nabla_Fanin loss(f) = 0$ at initialization, GradMax maximizes $frob(nabla_Fa
 #proposition[
   *GradMax reduced objective.* The GradMax optimization reduces to:
   $ cal(J)_("GradMax")(Fanout) := frob(B_(-2) times_(cp) Fanout)^2 $ <eq:gradmax_reduced>
-  such that $Fanout trans(Fanout) = I_cext$.
+  such that $trans(Fanout) Fanout = I_cext$.
   
-  The optimal $Fanout^*$ are the leading left-singular vectors of $B_(-2)$.
+  The optimal $Fanout^*$ are the leading right-singular vectors of $B_(-2)$.
 ]<prop:gradmax_reduced>
 
+=== GradMax-Opt
+
+GradMax-Opt is the same, but instead of using SVD it uses gradient descent. This allows switching the roles of $Fanin$ and $Fanout$: setting $Fanout = 0$ and maximizing $frob(nabla_Fanout loss(f))$.
 
 == SENN
 
@@ -239,7 +242,7 @@ Note that NeST justifies this choice with Hebbian theory and considers $abs(nabl
 
 === Neuron Addition
 
-When adding a new neuron, NeST only adds a single connection from neuron $i$ in layer $l-2$ to neuron $j$ in layer $l$. They set $Fanin$ and $Fanout$ to zero except for the values at indices $(i)$ and $(j)$ respectively. This gives:
+When adding a new neuron, NeST only adds a few connections between pairs of neurons $(i, j)$ with neuron $i$ in layer $l-2$ and neuron $j$ in layer $l$. They set $Fanin$ and $Fanout$ to zero except for the values at indices $(i)$ and $(j)$ respectively. This gives:
 $ deltas(x)[j] = Fanout[j] sigma(Fanin[i] postact(l: -2)(x)[i]) approx Fanout[j] sigma'(0) Fanin[i] postact(l: -2)(x)[i] $
 
 Dropping the constant $sigma'(0)$, they optimize the decrease in loss after the addition:
@@ -252,6 +255,7 @@ Hence they maximize $nabla_(preact()[j]) loss(preact()) dot postact(l: -2)[i] do
 #proposition[
   *NeST neuron addition.* For adding a new neuron, NeST selects:
   $ i^*, j^* = argmax(i\, j) abs(B_(-2))[i, j] $
+  to add a single connection, or the pairs in the top $beta$ fraction to add several connections.
 ]<prop:nest_objective>
 
 === Initialization
@@ -281,7 +285,7 @@ NORTH @maileWhenWhereHow2022 takes a geometric perspective: new neurons should a
 NORTH seeks $fanin$ such that the new activations $Postactext = sigma(Postact(l:-2) trans(fanin))$ are orthogonal to existing ones  which is equivalent to lie in $ker(trans(Postact(l:-1)))$.
 
 #proposition[
-  *NORTH construction.* Let $V in (n, n - cmid)$ be an orthonormal basis of $ker(trans(Preact(l:-1)))$ (computed via SVD). For random directions $R in (n - cmid, cext)$:
+  *NORTH-Pre construction.* Let $V in (n, n - cmid)$ be an orthonormal basis of $ker(trans(Preact(l:-1)))$ (computed via SVD). For random directions $R in (n - cmid, cext)$:
   $ trans(Fanin) = covpostact_(-2)^(-1) times_(cm) trans(Postact(l:-2)) times_n V times_(n - cmid) R $ <eq:north_proposition>
 ]<prop:north_construction>
 
@@ -289,7 +293,7 @@ NORTH seeks $fanin$ such that the new activations $Postactext = sigma(Postact(l:
 
 They use the approximation $sigma approx "Identity"$ to relax the problem to replace $Postactext$ with $Preactext =  Postact(l:-2) times_(cm) trans(fanin)$ and $ker(trans(Postact(l:-1)))$ with $ker(trans(Preact(l:-1)))$.
 
-First they compute an a basis $V in (n, n - cmid)$ of $ker(trans(Preact(l:-1)))$ using SVD. Then they generate random combinations of the basis vectors $V times_(n - cmid) r$ for random $r$ as candidates for $Preactext$. For each candidate they solve for $fanin$ such that $Postact(l:-2) times_(cm) trans(fanin) = V times_(n - cmid) r$ which gives:
+First they compute a basis $V in (n, n - cmid)$ of $ker(trans(Preact(l:-1)))$ using SVD. Then they generate random combinations of the basis vectors $V times_(n - cmid) r$ for random $r$ as candidates for $Preactext$. For each candidate they solve for $fanin$ such that $Postact(l:-2) times_(cm) trans(fanin) = V times_(n - cmid) r$ which gives:
 $ trans(fanin) = pinvp(Postact(l:-2)) times_n V r $
 
 Or for a batched version with $cext$ candidates $R in (n - cmid, cext)$ with orthogonal columns:
@@ -297,7 +301,7 @@ $ trans(Fanin) &= pinvp(Postact(l:-2)) times_n V times_(n - cmid) R in (cm, cext
 &= pinvp(trans(Postact(l:-2)) times_n Postact(l:-2)) times_(cm) trans(Postact(l:-2)) times_n V times_(n - cmid) R \
 &prop covpostact_(-2)^(-1) times_(cm) trans(Postact(l:-2)) times_n V times_(n - cmid) R
 $
-($prop$ because with skip the $1/n$ factor.)
+($prop$ because we skip the $1/n$ factor.)
 Then they select the best candidates according to the orthogonality of $Postactext = sigma(Postact(l:-2)  trans(fanin) )$ to $Postact(l:-1)$ using this time the exact activation function $sigma$.
 
 = Unified Framework
@@ -329,30 +333,30 @@ We now show that all methods can be understood as special cases of a common opti
         [*Method*], [$T$], [$covpostact_(-1)^"ext"$], [$covgrad$], [*Extra constraints*], [$Fanin$], [$Fanout$], [$postactext perp postact(l:-1)$], [$sigma$]
       ),
       [Full], [$Bottleneck$], [$covpostact_(-1)^"ext"$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Any],
-      [TINY (proj.)], [$Bottleneck$], [$Fanin covpostact_(-1) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Identity],
-      [TINY (no proj.)], [$Gradpreact$], [$Fanin covpostact_(-1) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
-      [GradMax], [$Gradpreact$], [$Fanin trans(Fanin)$], [$I_(cp)$], [$trans(Fanin)Fanin=I_(cext); Fanout trans(Fanout) = I_(cext)$], [$0$], [$Fanout^*$], [#sym.times], [Any],
+      [TINY (proj.)], [$Bottleneck$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Identity],
+      [TINY (no proj.)], [$Gradpreact$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
+      [GradMax], [$Gradpreact$], [$Fanin trans(Fanin)$], [$I_(cp)$], [$trans(Fanin)Fanin=I_(cext); trans(Fanout) Fanout = I_(cext)$], [$0$], [$Fanout^*$], [#sym.times], [Any],
       [SENN], [$Bottleneck$], [$covpostact_(-1)^"ext"$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$0$], [#sym.checkmark], [Any],
-      [NeST], [$Gradpreact$], [$Fanin covpostact_(-1) trans(Fanin)$], [$I_(cp)$], [$norm(Fanin)_0 = norm(Fanout)_0 = 1$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
+      [NeST], [$Gradpreact$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$norm(Fanin)_0 = norm(Fanout)_0 = 1$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
     ),
     caption: [Neuron addition methods as special cases of the unified objective @eq:unified_objective.]
   ) <tab:comparison>
 
 Notes:
-- Assuming $covpostact_(-1)^"ext" = Fanin covpostact_(-1) trans(Fanin)$ in @eq:unified_objective_scalarp is equivalent to linearizing $sigma$ around $0$ in @eq:unified_objective_norm.
+- Assuming $covpostact_(-1)^"ext" = Fanin covpostact_(-2) trans(Fanin)$ in @eq:unified_objective_scalarp is equivalent to linearizing $sigma$ around $0$ in @eq:unified_objective_norm.
 - The GradMax assumption $covpostact_(-1)^"ext" = Fanin trans(Fanin)$ is like assuming the input data is whitened in addition to linearizing $sigma$ around $0$.
 
 ]<thm:unified_objective>
 
 #proof[
   The derivations for each method are provided in the following sections.
-  We only proof the equivalence between the minimization and maximization forms. By @lemma:argmin_norm_to_argmax_scalarp from the preliminaries, we have:
+  We only prove the equivalence between the minimization and maximization forms. By @lemma:argmin_norm_to_argmax_scalarp from the preliminaries, we have:
   $ Fanin^*, Fanout^* 
   &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmin(Fanin\, Fanout) 1/n frob(T times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
   #intertext[By @corollary:argmin_norm_to_argmax_scalarp:]#<equate:revoke>\
-  &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(Bottleneck times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
-  &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(Bottleneck times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS)
+  &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
+  &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS)
   $
 ]
 
@@ -380,13 +384,13 @@ We now prove that each method can be derived from the unified objective @eq:unif
 === Derivation of GradMax
 
 #proposition[
-  *GradMax from unified objective.* Setting $T = Gradpreact$, $covpostact_(-2) = I_(cm)$, $covgrad = I_(cp)$, with the constraint $Fanout trans(Fanout) = I_(cext)$, and then setting $Fanin = 0$ after optimization yields GradMax.
+  *GradMax from unified objective.* Setting $T <- Gradpreact$, $covpostact_(-2) <- I_(cm)$, $covgrad <- I_(cp)$, with the constraint $trans(Fanout) Fanout = I_(cext)$, and then setting $Fanin = 0$ after optimization yields GradMax.
 ]<prop:gradmax_derivation>
 This proof is largely inspired by the work from @verbockhavenSpottingExpressivityBottlenecks2025.
 
 #proof[
   Starting from @eq:unified_objective_scalarp with $covgrad = I_(cp)$ and $T = Gradpreact$, the objective is:
-  $ argmax(Fanin\, Fanout\, frob(Fanin trans(Fanin) trans(Fanout)) <= 1)& scalarp(Bottleneck, Postactext times_(cext) trans(Fanout)) $
+  $ argmax(Fanin\, Fanout\, frob(Fanin trans(Fanin) trans(Fanout)) <= 1)& scalarp(Gradpreact, Postactext times_(cext) trans(Fanout)) $
   Using that $trans(Fanin) Fanin = I_(cext)$ we have that $frob(Fanin trans(Fanin) trans(Fanout)) = frob(trans(Fanin) trans(Fanout))$.
   In addition, we replace $Postactext$ with its linear approximation $Postact(l:-2) trans(Fanin)$. However this approximation is not a strong assumption as it is only used during backward at $sigma(Postact(l: -2) trans(Fanin)) = sigma(0)$ as GradMax set $Fanin = 0$. Therefore as long as $sigma'(0) = 1$ the approximation is exact. We get:
 
@@ -400,9 +404,9 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
   
   This is equivalent to a low-rank approximation of $B_(-2)$. By @theorem:separable_optimization, optimizing over $Fanout$ with $trans(Fanin) <- trans(Fanin^*)  = B_(-2) Fanout pinvp(trans(Fanout) Fanout) = B_(-2) Fanout$ gives:
   $
-    &prop argmax(frob(Fanout) <= 1) frob(B_(-2) Fanout trans(Fanout)) \
-    #flushl[Using $Fanout trans(Fanout) = I_(cext)$:]
-    &=argmax(frob(Fanout) <= 1) frob(B_(-2) Fanout)
+    &prop argmax(frob(Fanout)^2 <= cext) frob(B_(-2) Fanout trans(Fanout)) \
+    #flushl[Using $trans(Fanout) Fanout = I_(cext)$:]
+    &=argmax(frob(Fanout)^2 <= cext) frob(B_(-2) Fanout)
   $
   
   This is exactly the GradMax objective $cal(J)_("GradMax")(Fanout)$ from @eq:gradmax_reduced. Finally, setting $Fanin = 0$ after optimization matches GradMax's initialization.
@@ -422,18 +426,18 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
   $ argmin(Fanin\, tilde(Fanout)) frob(Bottleneck times_cp isqrtS - Postactext times_(cext) trans(tilde(Fanout))) $
   
   For fixed $Fanin$, the optimal $tilde(Fanout)^*$ satisfies:
-  $ trans(tilde(Fanout)^*) = pinvp(covpostact_(-1)^("ext")) times_cext partial Fanout times_cp isqrtS $
+  $ trans(tilde(Fanout)^*) = pinvp(covpostact_(-1)^("ext")) times_cext trans(partial Fanout) times_cp isqrtS $
   
-  where $partial Fanout = 1/n trans(Postactext) times_n Bottleneck$.
-  
+  where $trans(partial Fanout) = 1/n trans(Postactext) times_n Bottleneck$.
+
   By @lemma:optimal_projection, the objective at optimum is:
   $
-    frob(Postactext times_(cext) trans(tilde(Fanout)^*))^2 
-    &= frob(covpostact_(-1)^("ext") times_(cext) trans(tilde(Fanout)^*))^2 \
-    &= frob(covpostact_(-1)^("ext") times_(cext) pinvp(covpostact_(-1)^("ext")) times_cext partial Fanout times_cp isqrtS)^2 \
-    &= frob(isqrtAext times_cext partial Fanout times_cp isqrtS)^2
+    frob(Postactext times_(cext) trans(tilde(Fanout)^*))^2
+    &= frob((covpostact_(-1)^("ext"))^(1/2) times_(cext) trans(tilde(Fanout)^*))^2 \
+    &= frob((covpostact_(-1)^("ext"))^(1/2) times_(cext) pinvp(covpostact_(-1)^("ext")) times_cext trans(partial Fanout) times_cp isqrtS)^2 \
+    &= frob(isqrtAext times_cext trans(partial Fanout) times_cp isqrtS)^2
   $
-  
+
   This is exactly the SENN objective $cal(J)_("SENN")(Fanin)$ from @eq:senn_reduced.
 ]
 
@@ -466,21 +470,21 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
 ]<prop:north_satisfaction>
 
 #proposition[
-  $fanin$ selected by any method with $T = Bottleneck$ and $A = A$ are in the set of $fanin$ constructed by NORTH.
-]
+  $fanin$ selected by any method with $T <- Bottleneck$ and $covpostact_(-1)^"ext" <- Fanin covpostact_(-2) trans(Fanin)$ are in the set of $fanin$ constructed by NORTH-Pre.
+] 
 #proof[
-  By @prop:bottleneck_orthogonality, $trans(Postact(l:-1)) times_n Bottleneck = 0$.
+  By @prop:bottleneck_orthogonality, $trans(Postact(l:-1)) times_n Bottleneck = 0$, so $Bottleneck$ spans directions orthogonal to $Postact(l:-1)$, similarly to $V$, which spans directions orthogonal to $Preact(l:-1)$ (the same under the first-order approximation, though further from NORTH's actual goal).
   
   For those methods the optimal solution satisfies:
   $ Postact(l:-2) times_(cm) trans(Fanin) times_(cext) trans(Fanout) approx Bottleneck $
   
-  Hence ($prop$ because with skip the $1/n$ factor):
+  Hence ($prop$ because we skip the $1/n$ factor):
   $ trans(Fanin) prop pinv(covpostact_(-2)) times_(cm) trans(Postact(l:-2)) times_n Bottleneck times_cp pinv(trans(Fanout)) $
   
-  Comparing with NORTH's construction (@eq:north_proposition):
+  Comparing with NORTH-Pre's construction (@eq:north_proposition):
   $ trans(Fanin) = covpostact_(-2)^(-1) times_(cm) trans(Postact(l:-2)) times_n V times_(n - cmid) R $
   
-  The structures are identical with $V <- Bottleneck$ and $R <- pinv(trans(Fanout))$. Since $Bottleneck$ spans directions orthogonal to $Postact(l:-1)$, it plays the same role as the null-space basis $V$ in NORTH.
+  The structures are identical with $V <- Bottleneck$ and $R <- pinv(trans(Fanout))$.
 ]
 /*
 == Intuition: Role of $covgrad^(-1)$

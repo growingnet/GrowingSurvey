@@ -65,3 +65,9 @@
 #let isqrtA= [$covpostact_(-2)^(-1/2)$]
 #let sqrtAext= [$(covpostact_(-1)^"ext")^(1/2)$]
 #let isqrtAext= [$(covpostact_(-1)^"ext")^(-1/2)$]
+
+// Review flags (also defined in main.typ; duplicated here so included subfiles can use them).
+#let comment(type, color, reason) = [\[*#type*: #text(fill: color)[#reason]\]]
+#let unclear(reason) = comment("Unclear", red, reason)
+#let wrong(reason) = comment("Wrong", orange, reason)
+#let notrepresentative(reason) = comment("Not from the original paper", blue, reason)

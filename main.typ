@@ -15,7 +15,6 @@
 #show: equate.with(breakable: true, sub-numbering: true)
 #show: intertext-rule
 
-
 #outline(indent: auto, depth: 2)
 
 

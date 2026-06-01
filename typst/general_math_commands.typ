@@ -52,3 +52,4 @@ cases(delim:"|", #X &--> #Y, #x & arrow.r.bar.long #y)$]
 #let loss = math.cal([L])
 
 #let otimes = [$times.o$]
+#let softmax = ["softmax"]
