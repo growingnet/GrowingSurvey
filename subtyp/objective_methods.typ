@@ -57,12 +57,12 @@ Several statistics computed over the dataset are used across all methods:
 
 #definition[
   The *activation covariance* at layer $l$ is:
-  $ covpostact_(l) := Edata[postact(l: l)(x) times_1 transp(postact(l: l)(x))] approx 1/ n trans(Postact(l: l)) times_n Postact(l: l) $
+  $ covpostact_(l) := Edata[postact(l: l)(x) times_1 transp(postact(l: l)(x))] approx 1/ n trans(Postact(l: l)) times_n Postact(l: l) in (C_l, C_l) $
 ]
 
 #definition[
-  The *gradient-activation cross-covariance* at layer $l$ is:
-  $ B_(l) := Edata[postact(l: l)(x) times_1 transp(-gradpreact()(x))] approx 1/ n trans(Postact(l: l)) times_n Gradpreact $
+  The *gradient-activation cross-covariance* with activation at layer $l$ is:
+  $ B_(l) := Edata[(-gradpreact()(x)) times_1 transp(postact(l: l)(x))] approx 1/ n trans(Gradpreact) times_n Postact(l: l) in (cp, C_l) $
 ]
 
 #definition[
@@ -76,14 +76,14 @@ To avoid redundancy between added neurons and existing ones, several methods pro
 
 #lemma[
   The optimal weight update $dW^*$ that minimizes the residual gradient is:
-  $ dW^* := argmin(dW) frob(gradpreact() - Layer(W: dW) compose postact(l:-1) ) = transp(pinv(covpostact_(-1)) times_(cmid) B_(-1)) $
+  $ dW^* := argmin(dW) frob(gradpreact() - Layer(W: dW) compose postact(l:-1) ) = B_(-1) times_(cmid) pinv(covpostact_(-1)) $
 ]<lemma:optimal_dW>
 
 #proof[
   We solve it for a batch of data points:
   $dW^* = argmin(dW) frob(Gradpreact - Postact(l:-1) times_(cmid) trans(dW))$
   This is a least-squares problem:
-  $ trans(dW^*) = pinvp(trans(Postact(l:-1)) times_n Postact(l:-1)) times_cmid Postact(l: -1) times_n Gradpreact  =   pinv(covpostact_(-1)) times_(cmid) B_(-1)$
+  $ trans(dW^*) = pinvp(trans(Postact(l:-1)) times_n Postact(l:-1)) times_cmid trans(Postact(l: -1)) times_n Gradpreact  =   pinv(covpostact_(-1)) times_(cmid) trans(B_(-1))$
 ]
 
 #definition[
@@ -91,7 +91,7 @@ To avoid redundancy between added neurons and existing ones, several methods pro
   $ bottleneck(x) := -gradpreact()(x) - Layer(W: dW^*)(postact(l: -1)(x)) in (cp) $
   
   In batched form:
-  $ Bottleneck := Gradpreact - Postact(l:-1) times_(cmid) covpostact_(-1)^(-1) times_(cmid) B_(-1) in (n, cp) $
+  $ Bottleneck := Gradpreact - Postact(l:-1) times_(cmid) covpostact_(-1)^(-1) times_(cmid) trans(B_(-1)) in (n, cp) $
 ]
 
 #proposition[
@@ -155,15 +155,15 @@ As $nabla_Fanout loss(f) = 0$ at initialization, GradMax maximizes $frob(nabla_F
 
 #lemma[
   With $Fanin = 0$ and $sigma'(0) = 1$:
-  $ nabla_Fanin loss(f) = trans(Fanout) times_(cp) Edata[gradpreact()(x) times_1 trans(postact(l: -2)(x))] = trans(Fanout) times_(cp) trans(B_(-2)) $
+  $ nabla_Fanin loss(f) = trans(Fanout) times_(cp) Edata[gradpreact()(x) times_1 trans(postact(l: -2)(x))] = trans(Fanout) times_(cp) B_(-2) $
 ]
 
 #proposition[
   *GradMax reduced objective.* The GradMax optimization reduces to:
-  $ cal(J)_("GradMax")(Fanout) := frob(B_(-2) times_(cp) Fanout)^2 $ <eq:gradmax_reduced>
+  $ cal(J)_("GradMax")(Fanout) := frob(trans(B_(-2)) times_(cp) Fanout)^2 $ <eq:gradmax_reduced>
   such that $trans(Fanout) Fanout = I_cext$.
   
-  The optimal $Fanout^*$ are the leading right-singular vectors of $B_(-2)$.
+  The optimal $Fanout^*$ are the leading left-singular vectors of $B_(-2)$.
 ]<prop:gradmax_reduced>
 
 === GradMax-Opt
@@ -237,7 +237,7 @@ Note that NeST justifies this choice with Hebbian theory and considers $abs(nabl
 
 #proposition[
   *NeST connection activation.* For adding a connection in an existing layer, NeST selects:
-  $ i^*, j^* = argmax(i\, j) abs(B_(-1))[i, j] $
+  $ i^*, j^* = argmax(i\, j) abs(B_(-1))[j, i] $
 ]<prop:nest_connection>
 
 === Neuron Addition
@@ -254,20 +254,20 @@ Hence they maximize $nabla_(preact()[j]) loss(preact()) dot postact(l: -2)[i] do
 
 #proposition[
   *NeST neuron addition.* For adding a new neuron, NeST selects:
-  $ i^*, j^* = argmax(i\, j) abs(B_(-2))[i, j] $
+  $ i^*, j^* = argmax(i\, j) abs(B_(-2))[j, i] $
   to add a single connection, or the pairs in the top $beta$ fraction to add several connections.
 ]<prop:nest_objective>
 
 === Initialization
 
-Once $(i^*, j^*)$ is chosen, NeST initializes the weights so that the change $deltas[j]$ is similar to that created by a gradient step on a virtual connection between $postact(l: -2)[i]$ and $preact()[j]$, yielding a loss decrease of $frob(B_(-2)[i^*, j^*])^2$. The sign is randomized:
+Once $(i^*, j^*)$ is chosen, NeST initializes the weights so that the change $deltas[j]$ is similar to that created by a gradient step on a virtual connection between $postact(l: -2)[i]$ and $preact()[j]$, yielding a loss decrease of $frob(B_(-2)[j^*, i^*])^2$. The sign is randomized:
 
 #proposition[
   *NeST initialization.* Once $(i^*, j^*)$ is selected, NeST initializes:
   $
   epsilon &~ "Rademacher" #ie "Uniform"({-1, 1}) \
-  Fanin[i^*] &= epsilon dot "sign"(B_(-2)[i^*, j^*]) dot sqrt(abs(B_(-2)[i^*, j^*])) \
-  Fanout[j^*] &= epsilon dot sqrt(abs(B_(-2)[i^*, j^*]))
+  Fanin[i^*] &= epsilon dot "sign"(B_(-2)[j^*, i^*]) dot sqrt(abs(B_(-2)[j^*, i^*])) \
+  Fanout[j^*] &= epsilon dot sqrt(abs(B_(-2)[j^*, i^*]))
   $
   
   All other entries of $Fanin$ and $Fanout$ are zero.
@@ -397,16 +397,16 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
   $
   = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(Gradpreact, 1/n Postact(l:-2) trans(Fanin) times_(cext) trans(Fanout)) \
   = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)&  scalarp(trans(1/n Postact(l:-2)) times_n Gradpreact, trans(Fanin) times_(cext) trans(Fanout)) \
-  = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(B_(-2), trans(Fanin) times_(cext) trans(Fanout))\
+  = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(trans(B_(-2)), trans(Fanin) times_(cext) trans(Fanout))\
   #flushl[Using @corollary:argmin_norm_to_argmax_scalarp:]
-  prop argmin(Fanin\, Fanout)& frob(B_(-2) - trans(Fanin) times_(cext) trans(Fanout))
+  prop argmin(Fanin\, Fanout)& frob(trans(B_(-2)) - trans(Fanin) times_(cext) trans(Fanout))
   $
   
-  This is equivalent to a low-rank approximation of $B_(-2)$. By @theorem:separable_optimization, optimizing over $Fanout$ with $trans(Fanin) <- trans(Fanin^*)  = B_(-2) Fanout pinvp(trans(Fanout) Fanout) = B_(-2) Fanout$ gives:
+  This is equivalent to a low-rank approximation of $trans(B_(-2))$. By @theorem:separable_optimization, optimizing over $Fanout$ with $trans(Fanin) <- trans(Fanin^*)  = trans(B_(-2)) Fanout pinvp(trans(Fanout) Fanout) = trans(B_(-2)) Fanout$ gives:
   $
-    &prop argmax(frob(Fanout)^2 <= cext) frob(B_(-2) Fanout trans(Fanout)) \
+    &prop argmax(frob(Fanout)^2 <= cext) frob(trans(B_(-2)) Fanout trans(Fanout)) \
     #flushl[Using $trans(Fanout) Fanout = I_(cext)$:]
-    &=argmax(frob(Fanout)^2 <= cext) frob(B_(-2) Fanout)
+    &=argmax(frob(Fanout)^2 <= cext) frob(trans(B_(-2)) Fanout)
   $
   
   This is exactly the GradMax objective $cal(J)_("GradMax")(Fanout)$ from @eq:gradmax_reduced. Finally, setting $Fanin = 0$ after optimization matches GradMax's initialization.
@@ -455,11 +455,11 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
   where $e_j$ is the $j$-th standard basis vector. This simplifies to minimizing:
   $ sum_k frob(Gradpreact[:, k] - Postact(l:-2)[:, i] Fanin[i] Fanout[j] delta_(k j))^2 $
   
-  The optimal solution aligns $Fanin[i] Fanout[j]$ with the correlation between $Postact(l:-2)[:, i]$ and $Gradpreact[:, j]$, which is $B_(-2)[i, j]$.
+  The optimal solution aligns $Fanin[i] Fanout[j]$ with the correlation between $Postact(l:-2)[:, i]$ and $Gradpreact[:, j]$, which is $B_(-2)[j, i]$.
   
   To maximize the decrease in objective, we choose:
-  $ i^*, j^* = argmax(i\, j) abs(B_(-2)[i, j]) $
-  and set: $Fanin[i^*] = Fanout[j^*] = epsilon sqrt(abs(B_(-2)[i^*, j^*])) sign(B_(-2)[i^*, j^*])$ for random $epsilon in {-1, 1}$.
+  $ i^*, j^* = argmax(i\, j) abs(B_(-2)[j, i]) $
+  and set: $Fanin[i^*] = Fanout[j^*] = epsilon sqrt(abs(B_(-2)[j^*, i^*])) sign(B_(-2)[j^*, i^*])$ for random $epsilon in {-1, 1}$.
   This is exactly the NeST selection criterion from @prop:nest_objective.
 ]
 
