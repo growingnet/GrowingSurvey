@@ -92,7 +92,7 @@
   &= argmin(x in F | norm(f(x)) != 0) ( - 2 t scalarp(y, f(d)) + t^2 )
   $
   with $d := x / norm(f(x))^(1/p) in F$ and $t := norm(f(x)) >= 0$.
- The solution over $t$ is achieved at $t = scalarp(y, f(d))$. Hence we get:
+ The solution over $t$ is achieved at $t = scalarp(y, f(d))$. #unclear[Substituting $t = scalarp(y, f(d))$ presupposes $scalarp(y, f(d)) >= 0$; for a direction with negative score the minimum over the feasible $t > 0$ is the (unattained) infimum at $t -> 0^+$ of value $0$, so such directions yield no minimizer. The next line $argmin (- scalarp(y, f(d))^2) = argmax scalarp(y, f(d))$ likewise silently uses $argmax abs(dot) = argmax (dot)$, which holds only because the witness forces the maximal score to be strictly positive. The conclusion is correct, but these two points deserve a word.] Hence we get:
   $ argmin(x in F | norm(f(x)) != 0) norm(y - f(x)) 
   &= argmin(x in F | norm(f(x)) != 0) ( - scalarp(y, f(d))^2 )\
   &= argmax(x in F | norm(f(x)) != 0) scalarp(y, f(d)) \

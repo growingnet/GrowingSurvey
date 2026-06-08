@@ -248,9 +248,9 @@ $ deltas(x)[j] = Fanout[j] sigma(Fanin[i] postact(l: -2)(x)[i]) approx Fanout[j]
 Dropping the constant $sigma'(0)$, they optimize the decrease in loss after the addition:
 $ loss(preact() + deltas) 
 &= loss(preact()) + scalarp(nabla_(preact()[j]) loss(preact()), deltas[j]) + o(norm(deltas[j])) \
-&approx loss(preact()) - nabla_(preact()[j]) loss(preact()) dot Fanout[j] dot Fanin[i] dot postact(l: -2)[i] $
+&approx loss(preact()) + nabla_(preact()[j]) loss(preact()) dot Fanout[j] dot Fanin[i] dot postact(l: -2)[i] $
 
-Hence they maximize $nabla_(preact()[j]) loss(preact()) dot postact(l: -2)[i] dot Fanout[j] dot Fanin[i]$ under the constraint that $abs(Fanout[j] dot Fanin[i])$ is small.
+Hence they minimize $nabla_(preact()[j]) loss(preact()) dot postact(l: -2)[i] dot Fanout[j] dot Fanin[i]$ under the constraint that $abs(Fanout[j] dot Fanin[i])$ is small.
 
 #proposition[
   *NeST neuron addition.* For adding a new neuron, NeST selects:
@@ -272,7 +272,7 @@ Once $(i^*, j^*)$ is chosen, NeST initializes the weights so that the change $de
 
   All other entries of $Fanin$ and $Fanout$ are zero.
   
-  *Note:* NesT seems to aligne the product $Fanout[j^*] dot Fanin[i^*]$ with $-B_(-2)[j^*, i^*]$ instead of $B_(-2)[j^*, i^*]$, which would maximize the loss instead of minimizing it. 
+  *Note:* The NeST paper seems to align the product $Fanout[j^*] dot Fanin[i^*]$ with $-B_(-2)[j^*, i^*]$ instead of $B_(-2)[j^*, i^*]$, which would maximize the loss instead of minimizing it. We present here what we believe is the intended version.
 ]<prop:nest_init>
 
 
@@ -358,7 +358,7 @@ Notes:
   $ Fanin^*, Fanout^* 
   &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmin(Fanin\, Fanout) 1/sqrt(n) frob(T times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
-  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $f: (Fanin, Fanout) |-> 1/sqrt(n) Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$, $n: (Fanin, Fanout) |-> (Fanin, - Fanout)$ is a valid sign-flip operator, @corollary:argmin_norm_to_argmax_scalarp applies if the target is not orthogonal to every reachable move. In the other case, the `argmin`/`argmax` is not unique and the proportionality relation is valid if we restrict ourself to the solution with $Fanout = 0$.]#<equate:revoke>\
+  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $f: (Fanin, Fanout) |-> 1/sqrt(n) Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$, $n: (Fanin, Fanout) |-> (Fanin, - Fanout)$ is a valid sign-flip operator, @corollary:argmin_norm_to_argmax_scalarp applies if the target is not orthogonal to every reachable move. In the other case, the `argmin`/`argmax` is not unique and the proportionality relation is valid if we restrict ourself to the solution with $Fanout = 0$. #unclear[The degenerate "other case" is not actually covered by @corollary:argmin_norm_to_argmax_scalarp: its second branch requires $f$ to have a trivial kernel, but here $f$ is bilinear and $f(Fanin, 0) = 0$ for every $Fanin$, so $ker f$ is non-trivial. Neither branch of the corollary applies in the degenerate case, so the "restrict to $Fanout = 0$" proportionality needs an independent justification.]]#<equate:revoke>\
   &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(1/(sqrt(n)) T times_cp isqrtS, 1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS)
   $
