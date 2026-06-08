@@ -168,7 +168,7 @@ As $nabla_Fanout loss(f) = 0$ at initialization, GradMax maximizes $frob(nabla_F
 
 === GradMax-Opt
 
-GradMax-Opt is the same, but instead of using SVD it uses gradient descent. This allows switching the roles of $Fanin$ and $Fanout$: setting $Fanout = 0$ and maximizing $frob(nabla_Fanout loss(f))$.
+GradMax-Opt is the same, but instead of using SVD it uses gradient descent. This allows an alternative initilization where the roles of $Fanin$ and $Fanout$ are switched: setting $Fanout = 0$ and maximizing $frob(nabla_Fanout loss(f))$.
 
 == SENN
 
@@ -269,8 +269,10 @@ Once $(i^*, j^*)$ is chosen, NeST initializes the weights so that the change $de
   Fanin[i^*] &= epsilon dot "sign"(B_(-2)[j^*, i^*]) dot sqrt(abs(B_(-2)[j^*, i^*])) \
   Fanout[j^*] &= epsilon dot sqrt(abs(B_(-2)[j^*, i^*]))
   $
-  
+
   All other entries of $Fanin$ and $Fanout$ are zero.
+  
+  *Note:* NesT seems to aligne the product $Fanout[j^*] dot Fanin[i^*]$ with $-B_(-2)[j^*, i^*]$ instead of $B_(-2)[j^*, i^*]$, which would maximize the loss instead of minimizing it. 
 ]<prop:nest_init>
 
 
@@ -355,9 +357,9 @@ Notes:
   We only prove the equivalence between the minimization and maximization forms. By @lemma:argmin_norm_to_argmax_scalarp from the preliminaries, we have:
   $ Fanin^*, Fanout^* 
   &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) \
-  &= argmin(Fanin\, Fanout) 1/n frob(T times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
-  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $(Fanin, Fanout) |-> 1/n Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$ and @corollary:argmin_norm_to_argmax_scalarp applies:]#<equate:revoke>\
-  &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
+  &= argmin(Fanin\, Fanout) 1/sqrt(n) frob(T times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
+  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $(Fanin, Fanout) |-> 1/sqrt(n) Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$ and @corollary:argmin_norm_to_argmax_scalarp applies:]#<equate:revoke>\
+  &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(1/(sqrt(n)) T times_cp isqrtS, 1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS)
   $
 
@@ -450,7 +452,7 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
 
   To maximize the decrease in objective, we choose:
   $ i^*, j^* = argmax(i\, j) abs(B_(-2)[j, i]) $
-  and set: $Fanin[i^*] = Fanout[j^*] = epsilon sqrt(abs(B_(-2)[j^*, i^*])) sign(B_(-2)[j^*, i^*])$ for random $epsilon in {-1, 1}$.
+  and set: $Fanin[i^*] = epsilon sign(B_(-2)[j^*, i^*]) sqrt(abs(B_(-2)[j^*, i^*]))$ and $Fanout[j^*] = epsilon sqrt(abs(B_(-2)[j^*, i^*]))$ for random $epsilon in {-1, 1}$.
   This is exactly the NeST selection criterion from @prop:nest_objective. (Note that we don't respect the exact scaling constraint $frob(trans(Fanin) trans(Fanout)) <= 1$, but evrything is done up to scaling, so this is not an issue.)
 ]
 
