@@ -358,7 +358,7 @@ Notes:
   $ Fanin^*, Fanout^* 
   &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmin(Fanin\, Fanout) 1/sqrt(n) frob(T times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
-  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $(Fanin, Fanout) |-> 1/sqrt(n) Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$ and @corollary:argmin_norm_to_argmax_scalarp applies:]#<equate:revoke>\
+  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $f: (Fanin, Fanout) |-> 1/sqrt(n) Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$, $n: (Fanin, Fanout) |-> (Fanin, - Fanout)$ is a valid sign-flip operator, @corollary:argmin_norm_to_argmax_scalarp applies if the target is not orthogonal to every reachable move. In the other case, the `argmin`/`argmax` is not unique and the proportionality relation is valid if we restrict ourself to the solution with $Fanout = 0$.]#<equate:revoke>\
   &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(1/(sqrt(n)) T times_cp isqrtS, 1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS)
   $

@@ -51,22 +51,38 @@
 ]
 
 
+#lemma[
+  For:
+  - $E$ a pre-Hilbert space,
+  - $F subset E$ a non empty set,
+  - $f: F -> E$,
+  - $y in E$,
+  - $n: F -> F$ a sign-flip operator: $forall d in F, f(n(d)) = - f(d)$.
+
+  Then $scalarp(f(.), y)$ takes a strictly positive value as soon as it takes a non-zero one:
+  $ (exists x in F, scalarp(f(x), y) != 0) ==> (exists x in F, scalarp(f(x), y) > 0) . $
+] <lemma:sign_symmetrization>
+#proof[
+  Let $x in F$ with $scalarp(f(x), y) != 0$. If $scalarp(f(x), y) > 0$ we are done; otherwise $scalarp(f(x), y) < 0$ and $n(x) in F$ satisfies $scalarp(f(n(x)), y) = - scalarp(f(x), y) > 0$.
+]
+
+
 #theorem[
     For:
-    - $E$ a pre-Hilbert space, 
+    - $E$ a pre-Hilbert space,
     - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
-    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$) and $ker f = {0}$
-    - $y in E$.
+    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$)
+    - $n: F -> F$ a sign-flip operator: $forall d in F, f(n(d)) = - f(d)$
+    - $y in E$ such that $exists x in F, scalarp(f(x), y) != 0$ (non-degeneracy).
 
     We have that:
-    $ 
+    $
         argmin(x in F) norm(y - f(x)) = {scalarp(y, f(d^*))^(1/p) d^* |  d^* in argmax(d in F | norm(f(d)) <= 1) scalarp(y, f(d)) }
      $ <eq:fixed_norm_optimisation_equivalence>
 ] <lemma:argmin_norm_to_argmax_scalarp>
 
 #proof[
-- If $forall x in F, scalarp(f(x), y) <= 0$, then $norm(y - f(x))^2 = norm(y)^2 - 2 scalarp(y, f(x)) + norm(f(x))^2 >= norm(y)^2$ with equality iff $f(x) = 0$, so the left side equals $ker f = {0}$; the right side is also ${0}$ since the maximum is then $0$ (reached at $f = 0$), so every $d^*$ in the $argmax$ has $scalarp(y, f(d^*)) = 0$.
-- If $exists x in F, scalarp(f(x), y) > 0$, by @lemma:argument_scaling, we have that in left hand side we can add $norm(f(x)) != 0$ and in the right hand side of <eq:fixed_norm_optimisation_equivalence>, we can replace $<= 1$ by $= 1$.
+  By @lemma:sign_symmetrization the non-degeneracy hypothesis yields some $x in F$ with $scalarp(f(x), y) > 0$, so by @lemma:argument_scaling we can add the constraint $norm(f(x)) != 0$ in the left-hand side and replace $<= 1$ by $= 1$ in the right-hand side.
   Let's proceed by set equality.
   $ argmin(x in F | norm(f(x)) != 0) norm(y - f(x)) &= argmin(x in F) (norm(y)^2 - 2scalarp(y, f(x))) + norm(f(x))^2 \
   &= argmin(x in F | norm(f(x)) != 0) ( - 2scalarp(y, f(x)) + norm(f(x))^2 )\
@@ -88,17 +104,19 @@
     For:
     - $E$ a pre-Hilbert space, 
     - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
-    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$) and $ker f = {0}$
-    - $y in E$.
+    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$)
+    - $n: F -> F$ a sign-flip operator: $forall d in F, f(n(d)) = - f(d)$
+    - $y in E$ such that $(exists x in F, scalarp(f(x), y) != 0)$ or $ker f = {0}$.
 
     We have that:
-    $ 
-        argmin(x in F) norm(y - f(x)) prop argmax(d in F|norm(f(d)) <= 1) scalarp(y, f(d)) 
+    $
+        argmin(x in F) norm(y - f(x)) prop argmax(d in F|norm(f(d)) <= 1) scalarp(y, f(d))
      $
 ] <corollary:argmin_norm_to_argmax_scalarp>
 
 #proof[
-  Direct consequence of @lemma:argmin_norm_to_argmax_scalarp.
+  - If $exists x in F, scalarp(f(x), y) != 0$, the non-degeneracy hypothesis of @lemma:argmin_norm_to_argmax_scalarp is met (using the same $n$), and its right-hand side is exactly the rescaled $argmax$.
+  - Otherwise $forall x in F, scalarp(f(x), y) = 0$ and $ker f = {0}$. Then $norm(y - f(x))^2 = norm(y)^2 + norm(f(x))^2 >= norm(y)^2$, with equality iff $f(x) = 0$, hence $argmin(x in F) norm(y - f(x)) = ker f = {0}$. On the other side $max_(norm(f(d)) <= 1) scalarp(y, f(d)) = 0$, so every maximizer $d^*$ satisfies $scalarp(y, f(d^*)) = 0$ and the rescaled set ${scalarp(y, f(d^*))^(1/p) d^*} = {0}$. Both sides reduce to ${0}$, so the proportionality holds.
 ]
 
 #let ssel = [$overline(s)$]
