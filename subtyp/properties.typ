@@ -20,10 +20,10 @@
     For:
     - $E$ a pre-Hilbert space, 
     - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
-    - $f: F -> E$ scaling equivariant #ie ($forall x in F, forall lambda in RR, f(lambda x) = lambda f(x)$)
+    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$)
     - $y in E$.
 
-    If $(exists x in F, scalarp(f(x), y) != 0)$ we have that:
+    If $(exists x in F, scalarp(f(x), y) > 0)$ we have that:
     $ 
          argmax(d in F | norm(f(d)) <= 1) scalarp(y, f(d)) = argmax(d in F | norm(f(d)) = 1) scalarp(y, f(d))
     $
@@ -39,17 +39,15 @@
   - Let us show that $I subset R$. Let $d^* in I$; we show that $norm(f(d^*)) = 1$.
 
 
-    Let $x in F$ with $scalarp(f(x), y) != 0$ (exists by hypothesis). Let $x' := sign(scalarp(f(x), y))x$. Then $scalarp(f(x'), y) > 0$.
-    By definition of $d^*$ being optimal in $I$,
-    $scalarp(y, f(d^*)) >= scalarp(y, f(x')) > 0$ and therefore $f(d^*) != 0$.
-    Let $lambda := 1 / norm(f(d^*)) > 0$ as $abs(lambda) <= 1$:
-    $ scalarp(y, f(d^*)) >= lambda scalarp(y, f(d^*)) = scalarp(y, f(lambda d^*)) $ by scaling equivariance of $f$.
-    By maximality of $d^*$ in $I$, this is an equality hence $norm(f(d^*)) = 1$.
+    Let $x in F$ with $scalarp(f(x), y) > 0$ (exists by hypothesis). For $epsilon > 0$ small enough $norm(f(epsilon x)) = epsilon^p norm(f(x)) <= 1$, so $epsilon x$ is feasible for $I$, and $scalarp(y, f(epsilon x)) = epsilon^p scalarp(y, f(x)) > 0$. By optimality of $d^*$ in $I$, $scalarp(y, f(d^*)) >= scalarp(y, f(epsilon x)) > 0$, hence $f(d^*) != 0$.
+    Let $lambda := 1 / norm(f(d^*))^(1/p) > 0$ as $abs(lambda) >= 1$:
+    $ scalarp(y, f(d^*)) <= lambda^p scalarp(y, f(d^*)) = scalarp(y, f(lambda d^*)) $ by homogeneity of $f$.
+    By maximality of $d^*$ in $I$, as $norm(f(lambda d^*)) = 1$, this is an equality hence $lambda = 1$ and $norm(f(d^*)) = 1$.
     Therefore $d^* in R$ and $I subset R$.
 
   - Let us show that $R subset I$. Let $d^* in R$; since $I subset R$, $d^*$ maximizes the score over ${d in F | norm(f(d)) <= 1}$, and as $norm(f(d^*)) <= 1$ we have that $d^* in I$. We conclude that $R subset I$.
   
-  For the second equality, we can do the same reasoning using that $norm(y - f(x))^2 = norm(y)^2 - 2 scalarp(y, f(x)) + norm(f(x))^2$.
+  For the second equality, with the witness $x$ above $norm(y - f(epsilon x))^2 = norm(y)^2 - 2 epsilon^p scalarp(y, f(x)) + epsilon^(2p) norm(f(x))^2 < norm(y)^2$ for $epsilon > 0$ small, while $f(x') = 0$ gives $norm(y - f(x'))^2 = norm(y)^2$; so no minimizer of $norm(y - f(x))$ has $f(x) = 0$.
 ]
 
 
@@ -57,40 +55,40 @@
     For:
     - $E$ a pre-Hilbert space, 
     - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
-    - $f: F -> E$ scaling equivariant #ie ($forall x in F, forall lambda in RR, f(lambda x) = lambda f(x)$)
+    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$) and $ker f = {0}$
     - $y in E$.
 
     We have that:
     $ 
-        argmin(x in F) norm(y - f(x)) = {scalarp(y, f(d^*)) d^* |  d^* in argmax(d in F | norm(f(d)) <= 1) scalarp(y, f(d)) }
+        argmin(x in F) norm(y - f(x)) = {scalarp(y, f(d^*))^(1/p) d^* |  d^* in argmax(d in F | norm(f(d)) <= 1) scalarp(y, f(d)) }
      $ <eq:fixed_norm_optimisation_equivalence>
 ] <lemma:argmin_norm_to_argmax_scalarp>
 
 #proof[
-- If $forall x in F, scalarp(f(x), y) = 0$, then both sides of <eq:fixed_norm_optimisation_equivalence> equal ${0}$.
-- If $exists x in F, scalarp(f(x), y) != 0$, by @lemma:argument_scaling, we have that in left hand side we can add $norm(f(x)) != 0$ and in the right hand side of <eq:fixed_norm_optimisation_equivalence>, we can replace $<= 1$ by $= 1$.
+- If $forall x in F, scalarp(f(x), y) <= 0$, then $norm(y - f(x))^2 = norm(y)^2 - 2 scalarp(y, f(x)) + norm(f(x))^2 >= norm(y)^2$ with equality iff $f(x) = 0$, so the left side equals $ker f = {0}$; the right side is also ${0}$ since the maximum is then $0$ (reached at $f = 0$), so every $d^*$ in the $argmax$ has $scalarp(y, f(d^*)) = 0$.
+- If $exists x in F, scalarp(f(x), y) > 0$, by @lemma:argument_scaling, we have that in left hand side we can add $norm(f(x)) != 0$ and in the right hand side of <eq:fixed_norm_optimisation_equivalence>, we can replace $<= 1$ by $= 1$.
   Let's proceed by set equality.
   $ argmin(x in F | norm(f(x)) != 0) norm(y - f(x)) &= argmin(x in F) (norm(y)^2 - 2scalarp(y, f(x))) + norm(f(x))^2 \
   &= argmin(x in F | norm(f(x)) != 0) ( - 2scalarp(y, f(x)) + norm(f(x))^2 )\
   &= argmin(x in F | norm(f(x)) != 0) ( - 2scalarp(y, norm(f(x)) f(x) / norm(f(x))) + norm(f(x))^2 ) \
-  #flushl[As $f$ is scaling equivariant:]
-  &= argmin(x in F | norm(f(x)) != 0) ( - 2 norm(f(x)) scalarp(y, f(x / norm(f(x)))) + norm(f(x))^2 ) \
+  #flushl[As $f$ is homogenous:]
+  &= argmin(x in F | norm(f(x)) != 0) ( - 2 norm(f(x)) scalarp(y, f(x / norm(f(x))^(1/p))) + norm(f(x))^2 ) \
   &= argmin(x in F | norm(f(x)) != 0) ( - 2 t scalarp(y, f(d)) + t^2 )
   $
-  with $d := x / norm(f(x)) in F$ and $t := norm(f(x)) >= 0$.
+  with $d := x / norm(f(x))^(1/p) in F$ and $t := norm(f(x)) >= 0$.
  The solution over $t$ is achieved at $t = scalarp(y, f(d))$. Hence we get:
   $ argmin(x in F | norm(f(x)) != 0) norm(y - f(x)) 
   &= argmin(x in F | norm(f(x)) != 0) ( - scalarp(y, f(d))^2 )\
   &= argmax(x in F | norm(f(x)) != 0) scalarp(y, f(d)) \
-  &= { scalarp(y, f(d^*)) d^* |  d^* in argmax(d in F | norm(f(d)) = 1) scalarp(y, f(d)) }
+  &= { scalarp(y, f(d^*))^(1/p) d^* |  d^* in argmax(d in F | norm(f(d)) = 1) scalarp(y, f(d)) }
   $
 ]
 
 #corollary[
     For:
     - $E$ a pre-Hilbert space, 
-    - $F subset E$ a non empty set stable by scaling #ie ($forall x in f, forall lambda in RR, lambda x in F$)
-    - $f: F -> E$ scaling equivariant #ie ($forall x in F, forall lambda in RR, f(lambda x) = lambda f(x)$)
+    - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
+    - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$) and $ker f = {0}$
     - $y in E$.
 
     We have that:
@@ -109,7 +107,7 @@
   - $n, p, a, b, p in NN$ 
   - $Y in (n, p), X in (n, a), A in (a, b), B in (b, p)$
   - $s(A): A mapsto argmin(B) norm(Y - X A B)$
-  - $ssel: A mapsto overline(s) in s(A)$
+  - $ssel: A mapsto overline(s)(A) in s(A)$
   - $hat(Y) := X A ssel(A)$
 
   $
@@ -150,7 +148,7 @@
    For:
    - $norm(.)$ a Euclidean norm
    - $A in (n, m)$
-   - $X in (m, n$
+   - $X in (m, n)$
     We have that:
     $
         norm(A X) = norm((trans(A) A)^(1/2) X)

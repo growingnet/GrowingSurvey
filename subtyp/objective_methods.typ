@@ -38,8 +38,8 @@ Layer()(bold(Postact(l: -2))) &= Postact(l: -2) times_(cm) trans(W) in (n, cmid)
 
 == Gradient Notation
 
-The (negative) gradient of the loss with respect to pre-activations, stacked row-wise:
-$ Gradpreact = vec(-trans(nabla_(preact()(x_1)) ell(f(x_1))), dots, -trans(nabla_(preact()(x_n)) ell(f(x_n)))) in (n, cp) $
+The gradient of the loss with respect to pre-activations, stacked row-wise:
+$ Gradpreact = vec(trans(nabla_(preact()(x_1)) ell(f(x_1))), dots, trans(nabla_(preact()(x_n)) ell(f(x_n)))) in (n, cp) $
 
 == Neuron Addition
 
@@ -62,7 +62,7 @@ Several statistics computed over the dataset are used across all methods:
 
 #definition[
   The *gradient-activation cross-covariance* with activation at layer $l$ is:
-  $ B_(l) := Edata[(-gradpreact()(x)) times_1 transp(postact(l: l)(x))] approx 1/ n trans(Gradpreact) times_n Postact(l: l) in (cp, C_l) $
+  $ B_(l) := Edata[(-gradpreact()(x)) times_1 transp(postact(l: l)(x))] approx - 1/ n trans(Gradpreact) times_n Postact(l: l) in (cp, C_l) $
 ]
 
 #definition[
@@ -76,14 +76,14 @@ To avoid redundancy between added neurons and existing ones, several methods pro
 
 #lemma[
   The optimal weight update $dW^*$ that minimizes the residual gradient is:
-  $ dW^* := argmin(dW) frob(gradpreact() - Layer(W: dW) compose postact(l:-1) ) = B_(-1) times_(cmid) pinv(covpostact_(-1)) $
+  $ dW^* := argmin(dW) frob(-gradpreact() - Layer(W: dW) compose postact(l:-1) ) = B_(-1) times_(cmid) pinv(covpostact_(-1)) $
 ]<lemma:optimal_dW>
 
 #proof[
   We solve it for a batch of data points:
-  $dW^* = argmin(dW) frob(Gradpreact - Postact(l:-1) times_(cmid) trans(dW))$
+  $dW^* = argmin(dW) frob(- Gradpreact - Postact(l:-1) times_(cmid) trans(dW))$
   This is a least-squares problem:
-  $ trans(dW^*) = pinvp(trans(Postact(l:-1)) times_n Postact(l:-1)) times_cmid trans(Postact(l: -1)) times_n Gradpreact  =   pinv(covpostact_(-1)) times_(cmid) trans(B_(-1))$
+  $ trans(dW^*) = pinvp(trans(Postact(l:-1)) times_n Postact(l:-1)) times_cmid trans(Postact(l: -1)) times_n (- Gradpreact)  =   pinv(covpostact_(-1)) times_(cmid) trans(B_(-1))$
 ]
 
 #definition[
@@ -91,7 +91,7 @@ To avoid redundancy between added neurons and existing ones, several methods pro
   $ bottleneck(x) := -gradpreact()(x) - Layer(W: dW^*)(postact(l: -1)(x)) in (cp) $
   
   In batched form:
-  $ Bottleneck := Gradpreact - Postact(l:-1) times_(cmid) covpostact_(-1)^(-1) times_(cmid) trans(B_(-1)) in (n, cp) $
+  $ Bottleneck := - Gradpreact - Postact(l:-1) times_(cmid) covpostact_(-1)^(-1) times_(cmid) trans(B_(-1)) in (n, cp) $
 ]
 
 #proposition[
@@ -124,7 +124,7 @@ TINY approximates $deltas(x) approx sigma'(0) dot Fanout times_(cext) Fanin time
   *TINY optimization problem (with projection).* The TINY method solves:
   $ argmin(Fanin\, Fanout) frob(Bottleneck - Postact(l:-2) times_(cm) trans(Fanin) times_(cext) trans(Fanout)) $ <eq:tiny_projection_optimization>
   
-  Without projection, replace $Bottleneck$ with $Gradpreact$.
+  Without projection, replace $Bottleneck$ with $- Gradpreact$.
 ]
 #proof[
   We maximize the first-order loss decrease, by @corollary:argmin_norm_to_argmax_scalarp:
@@ -155,7 +155,7 @@ As $nabla_Fanout loss(f) = 0$ at initialization, GradMax maximizes $frob(nabla_F
 
 #lemma[
   With $Fanin = 0$ and $sigma'(0) = 1$:
-  $ nabla_Fanin loss(f) = trans(Fanout) times_(cp) Edata[gradpreact()(x) times_1 trans(postact(l: -2)(x))] = trans(Fanout) times_(cp) B_(-2) $
+  $ nabla_Fanin loss(f) = trans(Fanout) times_(cp) Edata[gradpreact()(x) times_1 trans(postact(l: -2)(x))] = -trans(Fanout) times_(cp) B_(-2) $
 ]
 
 #proposition[
@@ -312,16 +312,18 @@ We now show that all methods can be understood as special cases of a common opti
 
 #theorem[
   *Unified objective for neuron addition.* All neuron addition methods studied in this document can be derived from the following optimization problem:
-  $ Fanin^*, Fanout^* 
-  &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_norm>\
-  &prop argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_scalarp> $ <eq:unified_objective>
+  $ Fanin^*, Fanout^*
+  &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_scalarp> \
+  #intertext[if we linearize $sigma$ around $0$:]#<equate:revoke>\
+  &prop argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) #<eq:unified_objective_norm> 
+  $ <eq:unified_objective>
   
   where:
-  - $T in (n, cp)$ is the target (gradient $Gradpreact$ or residual gradient $Bottleneck$)
+  - $T in (n, cp)$ is the target (negative gradient $- Gradpreact$ or residual gradient $Bottleneck$)
   - $covgrad in (cp, cp)$ is the gradient weighting metric
-  - $sigma$ is the activation function (or its linear approximation)
+  - $sigma$ is an activation function
   - Additional constraints may be imposed on $Fanin$ and $Fanout$
-  
+
   The following table summarizes the specialization for each method:
   
   #figure(
@@ -334,10 +336,10 @@ We now show that all methods can be understood as special cases of a common opti
       ),
       [Full], [$Bottleneck$], [$covpostact_(-1)^"ext"$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Any],
       [TINY (proj.)], [$Bottleneck$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.checkmark], [Identity],
-      [TINY (no proj.)], [$Gradpreact$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
-      [GradMax], [$Gradpreact$], [$Fanin trans(Fanin)$], [$I_(cp)$], [$trans(Fanin)Fanin=I_(cext); trans(Fanout) Fanout = I_(cext)$], [$0$], [$Fanout^*$], [#sym.times], [Any],
+      [TINY (no proj.)], [$- Gradpreact$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$emptyset$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
+      [GradMax], [$- Gradpreact$], [$Fanin trans(Fanin)$], [$I_(cp)$], [$Fanin trans(Fanin)=I_(cext); trans(Fanout) Fanout = I_(cext)$], [$0$], [$Fanout^*$], [#sym.times], [Any],
       [SENN], [$Bottleneck$], [$covpostact_(-1)^"ext"$], [$covgrad$], [$emptyset$], [$Fanin^*$], [$0$], [#sym.checkmark], [Any],
-      [NeST], [$Gradpreact$], [$Fanin covpostact_(-2) trans(Fanin)$], [$I_(cp)$], [$norm(Fanin)_0 = norm(Fanout)_0 = 1$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
+      [NeST], [$- Gradpreact$], [$Fanin  trans(Fanin)$], [$I_(cp)$], [$norm(Fanin)_0 = norm(Fanout)_0 = 1$], [$Fanin^*$], [$Fanout^*$], [#sym.times], [Identity],
     ),
     caption: [Neuron addition methods as special cases of the unified objective @eq:unified_objective.]
   ) <tab:comparison>
@@ -345,7 +347,7 @@ We now show that all methods can be understood as special cases of a common opti
 Notes:
 - Assuming $covpostact_(-1)^"ext" = Fanin covpostact_(-2) trans(Fanin)$ in @eq:unified_objective_scalarp is equivalent to linearizing $sigma$ around $0$ in @eq:unified_objective_norm.
 - The GradMax assumption $covpostact_(-1)^"ext" = Fanin trans(Fanin)$ is like assuming the input data is whitened in addition to linearizing $sigma$ around $0$.
-
+- The equivalence between the two optimization problems is correct either if we use the first order approximation of $sigma$ or if we allow to have different proportionality constants for $Fanin$ and $Fanout$.
 ]<thm:unified_objective>
 
 #proof[
@@ -354,10 +356,12 @@ Notes:
   $ Fanin^*, Fanout^* 
   &= argmin(Fanin\, Fanout) frob(T times_cp isqrtS - sigma(Postact(l:-2) times_(cm) trans(Fanin)) times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmin(Fanin\, Fanout) 1/n frob(T times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
-  #intertext[By @corollary:argmin_norm_to_argmax_scalarp:]#<equate:revoke>\
+  #intertext[Linearizing $sigma$ around $0$, $Postactext = Postact(l:-2) times_(cm) trans(Fanin)$ is linear in $Fanin$, so $(Fanin, Fanout) |-> 1/n Postactext trans(Fanout) sqrtS$ is homogeneous of degree $2$ and @corollary:argmin_norm_to_argmax_scalarp applies:]#<equate:revoke>\
   &prop argmax(Fanin\, Fanout\, frob(1/sqrt(n) Postactext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS) \
   &= argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) scalarp(T times_cp isqrtS, 1/n Postactext times_(cext) trans(Fanout) times_cp sqrtS)
   $
+
+  the last step using @theorem:rimannian_norm together with $covpostact_(-1)^"ext" = 1/n trans(Postactext) times_n Postactext$. This equivalence is only needed for the norm-form methods, i.e. TINY, which assumes $sigma approx "Identity"$; GradMax, NeST and SENN are obtained directly from the maximization form @eq:unified_objective_scalarp.
 ]
 
 == Derivation of Each Method
@@ -378,25 +382,25 @@ We now prove that each method can be derived from the unified objective @eq:unif
     $
    argmin(Fanin\, Fanout) frob(T - Postact(l:-2) times_(cm) trans(Fanin) times_(cext) trans(Fanout)) $
   
-  With $T = Bottleneck$, this is exactly @eq:tiny_projection_optimization. With $T = Gradpreact$, this is TINY without projection.
+  With $T = Bottleneck$, this is exactly @eq:tiny_projection_optimization. With $T = - Gradpreact$, this is TINY without projection.
 ]
 
 === Derivation of GradMax
 
 #proposition[
-  *GradMax from unified objective.* Setting $T <- Gradpreact$, $covpostact_(-2) <- I_(cm)$, $covgrad <- I_(cp)$, with the constraint $trans(Fanout) Fanout = I_(cext)$, and then setting $Fanin = 0$ after optimization yields GradMax.
+  *GradMax from unified objective.* Setting $T <- - Gradpreact$, $covpostact_(-2) <- I_(cm)$, $covgrad <- I_(cp)$, with the constraint $trans(Fanout) Fanout = I_(cext)$, and then setting $Fanin = 0$ after optimization yields GradMax.
 ]<prop:gradmax_derivation>
 This proof is largely inspired by the work from @verbockhavenSpottingExpressivityBottlenecks2025.
 
 #proof[
-  Starting from @eq:unified_objective_scalarp with $covgrad = I_(cp)$ and $T = Gradpreact$, the objective is:
-  $ argmax(Fanin\, Fanout\, frob(Fanin trans(Fanin) trans(Fanout)) <= 1)& scalarp(Gradpreact, Postactext times_(cext) trans(Fanout)) $
-  Using that $trans(Fanin) Fanin = I_(cext)$ we have that $frob(Fanin trans(Fanin) trans(Fanout)) = frob(trans(Fanin) trans(Fanout))$.
+  Starting from @eq:unified_objective_scalarp with $covgrad <- I_(cp)$ and $T <- - Gradpreact$, the objective is:
+  $ argmax(Fanin\, Fanout\, frob((Fanin trans(Fanin))^(1/2) trans(Fanout)) <= 1)& scalarp(- Gradpreact, Postactext times_(cext) trans(Fanout)) $
+  Using @theorem:rimannian_norm with $A <- trans(Fanin)$ we have that $frob((Fanin trans(Fanin))^(1/2) trans(Fanout)) = frob(trans(Fanin) trans(Fanout))$.
   In addition, we replace $Postactext$ with its linear approximation $Postact(l:-2) trans(Fanin)$. However this approximation is not a strong assumption as it is only used during backward at $sigma(Postact(l: -2) trans(Fanin)) = sigma(0)$ as GradMax set $Fanin = 0$. Therefore as long as $sigma'(0) = 1$ the approximation is exact. We get:
 
   $
-  = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(Gradpreact, 1/n Postact(l:-2) trans(Fanin) times_(cext) trans(Fanout)) \
-  = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)&  scalarp(trans(1/n Postact(l:-2)) times_n Gradpreact, trans(Fanin) times_(cext) trans(Fanout)) \
+  = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(- Gradpreact, 1/n Postact(l:-2) trans(Fanin) times_(cext) trans(Fanout)) \
+  = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)&  scalarp(trans(1/n Postact(l:-2)) times_n (- Gradpreact), trans(Fanin) times_(cext) trans(Fanout)) \
   = argmax(frob(trans(Fanin) times_(cext) trans(Fanout)) <= 1)& scalarp(trans(B_(-2)), trans(Fanin) times_(cext) trans(Fanout))\
   #flushl[Using @corollary:argmin_norm_to_argmax_scalarp:]
   prop argmin(Fanin\, Fanout)& frob(trans(B_(-2)) - trans(Fanin) times_(cext) trans(Fanout))
@@ -415,52 +419,39 @@ This proof is largely inspired by the work from @verbockhavenSpottingExpressivit
 === Derivation of SENN
 
 #proposition[
-  *SENN from unified objective.* The SENN objective $cal(J)_("SENN")$ is equivalent to @eq:unified_objective with $T = Bottleneck$, full gradient covariance $covgrad$, and then setting $Fanout = 0$ after optimization.
+  *SENN from unified objective.* The SENN objective $cal(J)_("SENN")$ is recovered from the maximization form @eq:unified_objective_scalarp with $T = Bottleneck$ and the full gradient covariance $covgrad$, setting $Fanout = 0$ after optimization.
 ]<prop:senn_derivation>
 
 #proof[
-  Starting from @eq:unified_objective with the $sqrtS$ weighting:
-  $ argmin(Fanin\, Fanout) frob(Bottleneck times_cp isqrtS - Postactext times_(cext) trans(Fanout) times_cp sqrtS) $
-  
-  Define $tilde(Fanout) := Fanout times_cp sqrtS$. The problem becomes:
-  $ argmin(Fanin\, tilde(Fanout)) frob(Bottleneck times_cp isqrtS - Postactext times_(cext) trans(tilde(Fanout))) $
-  
-  For fixed $Fanin$, the optimal $tilde(Fanout)^*$ satisfies:
-  $ trans(tilde(Fanout)^*) = pinvp(covpostact_(-1)^("ext")) times_cext trans(partial Fanout) times_cp isqrtS $
-  
-  where $trans(partial Fanout) = 1/n trans(Postactext) times_n Bottleneck$.
-
-  By @lemma:optimal_projection, the objective at optimum is:
-  $
-    frob(Postactext times_(cext) trans(tilde(Fanout)^*))^2
-    &= frob((covpostact_(-1)^("ext"))^(1/2) times_(cext) trans(tilde(Fanout)^*))^2 \
-    &= frob((covpostact_(-1)^("ext"))^(1/2) times_(cext) pinvp(covpostact_(-1)^("ext")) times_cext trans(partial Fanout) times_cp isqrtS)^2 \
-    &= frob(isqrtAext times_cext trans(partial Fanout) times_cp isqrtS)^2
-  $
-
-  This is exactly the SENN objective $cal(J)_("SENN")(Fanin)$ from @eq:senn_reduced.
+  We start from the maximization form @eq:unified_objective_scalarp with $T = Bottleneck$ and the full metric $covgrad$. Since $scalarp(Bottleneck times_cp isqrtS, X times_cp sqrtS) = scalarp(Bottleneck, X)$ for any $X$, the $covgrad$ factors cancel in the objective (the metric only enters through the constraint), which becomes
+  $ argmax(Fanin\, Fanout\, frob(sqrtAext times_(cext) trans(Fanout) times_cp sqrtS) <= 1) 1/n scalarp(Bottleneck, Postactext times_(cext) trans(Fanout)) . $
+  Fix $Fanin$ and let $M := sqrtAext times_(cext) trans(Fanout) times_cp sqrtS$, so the constraint reads $frob(M) <= 1$ and $trans(Fanout) = isqrtAext times_cext M times_cp isqrtS$. Moving $Postactext$ across the inner product brings out the cross-covariance $partial Fanout = 1/n trans(Bottleneck) times_n Postactext$, and since $isqrtAext$ and $isqrtS$ are symmetric,
+  $ 1/n scalarp(Bottleneck, Postactext times_(cext) trans(Fanout))
+  &= scalarp(1/n trans(Postactext) times_n Bottleneck, trans(Fanout)) = scalarp(trans(partial Fanout), trans(Fanout)) \
+  &= scalarp(trans(partial Fanout), isqrtAext times_cext M times_cp isqrtS) \
+  &= scalarp(isqrtAext times_cext trans(partial Fanout) times_cp isqrtS, M) , $
+  whose maximum over $frob(M) <= 1$ is, by Cauchy–Schwarz (attained at $M prop isqrtAext trans(partial Fanout) isqrtS$),
+  $ frob(isqrtAext times_cext trans(partial Fanout) times_cp isqrtS) = frob(isqrtS times_cp partial Fanout times_cext isqrtAext) = sqrt(cal(J)_("SENN")(Fanin)) $
+  with $cal(J)_("SENN")$ as in @eq:senn_reduced. The outer maximization over $Fanin$ is thus $argmax(Fanin) cal(J)_("SENN")(Fanin)$, the SENN objective. As in @prop:senn_reduced the optimal $Fanout$ only serves to score $Fanin$; SENN keeps $Fanout = 0$ at initialization to preserve the function.
 ]
 
 
 === Derivation of NeST
 
 #proposition[
-  *NeST from unified objective.* Setting $T = Gradpreact$, $covgrad = I_(cp)$, linearizing $sigma$ and adding the sparsity constraint $norm(Fanin)_0 = norm(Fanout)_0 = 1$ yields NeST.
+  *NeST from unified objective.* Setting $T <- - Gradpreact$, $covgrad <- I_(cp)$, linearizing $sigma$ and adding the sparsity constraint $norm(Fanin)_0 = norm(Fanout)_0 = 1$ yields NeST.
 ]<prop:nest_derivation>
 
 #proof[
-  With the sparsity constraint, only one entry of $Fanin$ (at index $i$) and one entry of $Fanout$ (at index $j$) are non-zero. The unified objective becomes:
-  $ argmin(Fanin[i]\, Fanout[j]) frob(Gradpreact - Postact(l:-2)[: , i] times_1 Fanin[i] times_1 Fanout[j] times_1 e_j^top) $
-  
-  where $e_j$ is the $j$-th standard basis vector. This simplifies to minimizing:
-  $ sum_k frob(Gradpreact[:, k] - Postact(l:-2)[:, i] Fanin[i] Fanout[j] delta_(k j))^2 $
-  
-  The optimal solution aligns $Fanin[i] Fanout[j]$ with the correlation between $Postact(l:-2)[:, i]$ and $Gradpreact[:, j]$, which is $B_(-2)[j, i]$.
-  
+  Starting from @eq:unified_objective_scalarp with $covpostact_(-1)^"ext" <- Fanin trans(Fanin)$, $covgrad <- I_(cp)$, $T <- - Gradpreact$ and $sigma="Id"$, the objective is:
+  $ argmax(Fanin\, Fanout\, frob((Fanin trans(Fanin))^(1/2) trans(Fanout)) <= 1\, norm(Fanin)_0 = norm(Fanout)_0 = 1)& scalarp(- Gradpreact, Postact(l:-2) times_(cm) trans(Fanin) times_(cext) trans(Fanout))\
+  = argmax(Fanin\, Fanout\, frob( trans(Fanin) trans(Fanout)) <= 1\, norm(Fanin)_0 = norm(Fanout)_0 = 1)& scalarp(trans(B_(-2)), trans(Fanin) times_(cext) trans(Fanout)) $
+
+
   To maximize the decrease in objective, we choose:
   $ i^*, j^* = argmax(i\, j) abs(B_(-2)[j, i]) $
   and set: $Fanin[i^*] = Fanout[j^*] = epsilon sqrt(abs(B_(-2)[j^*, i^*])) sign(B_(-2)[j^*, i^*])$ for random $epsilon in {-1, 1}$.
-  This is exactly the NeST selection criterion from @prop:nest_objective.
+  This is exactly the NeST selection criterion from @prop:nest_objective. (Note that we don't respect the exact scaling constraint $frob(trans(Fanin) trans(Fanout)) <= 1$, but evrything is done up to scaling, so this is not an issue.)
 ]
 
 == NORTH Satisfaction
