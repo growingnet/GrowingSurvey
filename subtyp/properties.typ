@@ -19,7 +19,7 @@
 #lemma[
     For:
     - $E$ a pre-Hilbert space, 
-    - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
+    - $F$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
     - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$)
     - $y in E$.
 
@@ -54,7 +54,7 @@
 #lemma[
   For:
   - $E$ a pre-Hilbert space,
-  - $F subset E$ a non empty set,
+  - $F$ a non empty set,
   - $f: F -> E$,
   - $y in E$,
   - $n: F -> F$ a sign-flip operator: $forall d in F, f(n(d)) = - f(d)$.
@@ -70,7 +70,7 @@
 #theorem[
     For:
     - $E$ a pre-Hilbert space,
-    - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
+    - $F$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
     - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$)
     - $n: F -> F$ a sign-flip operator: $forall d in F, f(n(d)) = - f(d)$
     - $y in E$ such that $exists x in F, scalarp(f(x), y) != 0$ (non-degeneracy).
@@ -104,7 +104,7 @@
 #corollary[
     For:
     - $E$ a pre-Hilbert space, 
-    - $F subset E$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
+    - $F$ a non empty set stable by scaling #ie ($forall x in F, forall lambda in RR, lambda x in F$)
     - $f: F -> E$ respect some scaling homogeneity ($exists p in NN^*,forall x in F, forall lambda in RR, f(lambda x) = lambda^p f(x)$)
     - $n: F -> F$ a sign-flip operator: $forall d in F, f(n(d)) = - f(d)$
     - $y in E$ such that $(exists x in F, scalarp(f(x), y) != 0)$ or $ker f = {0}$.
@@ -166,6 +166,7 @@
 #theorem[
    For:
    - $norm(.)$ a Euclidean norm
+   - $dot |-> transp(dot)$ the adjoint operator of the Euclidean inner product
    - $A in (n, m)$
    - $X in (m, n)$
     We have that:
