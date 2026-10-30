@@ -1,0 +1,22 @@
+# Common
+.venv
+.idea
+.vscode
+.claude
+.codex
+.auctex-auto
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.synctex.gz
+main.pdf
+
+# Archive uploaded to HAL
+hal.zip

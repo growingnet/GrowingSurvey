@@ -1,0 +1,82 @@
+
+\subsection{Where to grow?}
+The Where column of Table~\ref{tab:growing_decisions} summarizes the available location criteria. Most methods do not propose a novel \emph{where to grow} criterion, and either grow everywhere at once~\citep{chen_net2net_2016,wei_network_2016,yuan_accelerated_2023,evci_gradmax_2022,dong_towards_2020} or in a predefined order such as round-robin~\citep{verbockhaven_growing_2024,wen_autogrow_2020,wu_when_2024}. Beyond these baselines, two families of methods stand out. The first reuses the local expressivity criteria already used to decide
+when to grow (and for some, when to stop): SENN~\citep{mitchell_self-expanding_2024}
+grows where the natural expansion increment $\Delta\eta_{\mathrm{SENN}}$ is largest,
+ NORTH~\citep{maile_when_2022} where its activation effective rank or gradient trigger
+exceeds a threshold, Splitting~\citep{liu_splitting_2019} splits the
+neurons whose splitting matrix $\mathcal{S}(\theta)$ has a the most negative minimum eigenvalue $\lambda_{\min}$, and
+\citet{douka_growth_2025} extend TINY's expressivity bottleneck to architectures
+with an arbitrary directed acyclic graph structure and grows at its maximum location. The second ranks locations
+by measuring the norm of the gradient of new parameters: GradMax~\citep{evci_gradmax_2022} proposes,
+without implementing it, to use the singular values returned by its
+own maximisation problem. SensLI~\citep{kreisSensLISensitivityBasedLayer2026} instead uses the relative layer sensitivity
+\begin{equation}\label{eq:sensli_main}
+\rho_{\mathrm{SensLI}}(l)
+:=
+\frac{\|\nabla_{\theta_\mathrm{new}^l}\mathcal L\|^2}
+{|\mathcal W|^{-1}\sum_{W\in\mathcal W}\|\nabla_W\mathcal L\|^2},
+\end{equation}
+where $\mathcal W$ is the set of existing weight tensors, and inserts a function-preserving layer at the position where this sensitivity is largest.
+
+\subsection{When to grow?}
+
+Table~\ref{tab:growing_decisions} gives a compact overview of the timing and termination criteria for key growing methods. Almost all methods interleave growth events with conventional training, so the interval between two consecutive events is a design choice in its own right. What constitutes a good answer depends on the purpose assigned to growth: either reaching a \emph{predefined target architecture} at a lower training cost, or with a better final performance, or \emph{discovering} an architecture suited to a task for which no target is known. Most methods simply grow on a predefined schedule~\citep{chen_net2net_2016,wei_network_2016,evci_gradmax_2022,verbockhaven_growing_2024,yuan_accelerated_2023}. However, the depth-growing literature in particular focuses on \emph{when to grow}.
+
+\subsubsection{Predefined target architecture}
+
+When the final architecture is specified by the user, growth is only a means of
+training it, and the question of when to grow reduces to a pacing problem: how
+quickly should a known growth budget be spent?
+
+\textbf{LipGrow}~\citep{dong_towards_2020} grows by duplicating residual blocks and triggers growth when its scaled Lipschitz constant exceeds a tolerance: $L(F)/L_0 >r_{\mathrm{tol}}$, where $L_0$ is the pre-growth Lipschitz constant. An alternative reading of the same criterion, not the one advanced by the
+authors, is that a rapidly increasing Lipschitz constant indicates that the network is beginning to overfit the current incompletely-grown architecture, and that growth is preferable before the current weights settle in such a region.
+
+\textbf{FRAGrow}~\citep{wu_when_2024} is explicitly designed to regulate overfitting. Growth acts as an implicit regularizer: blocks added early have time to overfit more, compared to blocks added later. FRAGrow measures the overfitting risk level and uses it to set the growth interval:
+\begin{align}\label{eq:fragrow_main}
+\mathrm{ORL}
+&:=\mathrm{Acc}_{\mathrm{train}}-\mathrm{Acc}_{\mathrm{val}},
+& I(\mathrm{ORL})
+&:=\frac{I_{\max}}{1+\exp(\alpha-\mathrm{ORL})}.
+\end{align}
+It grows quickly on models that underfit and slowly on models that overfit. In its primary implementation, each new block copies the weights of its preceding block; only a block following a downsampling block is randomly initialized.
+
+\subsubsection{Unknown target architecture}
+
+When the architecture is an output of the procedure rather than an input, capacity should be added only when it is
+needed. The most direct implementation of this idea is to train until
+convergence, grow, and retain the change if it improves performance.
+
+\textbf{AutoGrow} \citep{wen_autogrow_2020} (and FRAGrow \citep{wu_when_2024})
+report that waiting for convergence is suboptimal, which is consistent with the
+observation that converged weights are a poor warm start for further training
+\citep{ash_warm-starting_2020}. AutoGrow therefore grows every $K$ epochs,
+with $K$ small enough that growth precedes convergence of the current
+sub-network. The resulting networks are well trained, in the
+sense that their accuracy matches or exceeds that of the same architectures trained from
+scratch, but because blocks are added before any expressivity deficiency has been
+established, the discovered architectures tend to be much larger than necessary.
+
+The alternative is to detect expressivity deficiencies locally and to grow when,
+and where, they arise. \emph{NORTH} \citep{maile_when_2022} proposes two
+such triggers. The activation trigger $\phi_a^{\mathrm{ED}}$~(Eq.~\ref{eq:north_main}) monitors the activation effective rank of a layer's
+activations $\Postact[l]$ relative to its width $C_l$:
+\begin{equation}\label{eq:north_main}
+\phi_a^{\mathrm{ED}}(f,l)
+:= \frac{1}{C_l}
+\left|\left\{\sigma\in\operatorname{SVD}(\Postact[l]/\sqrt n):
+\sigma>\varepsilon\right\}\right|.
+\end{equation}
+While this ratio remains below its value at
+initialization, the layer is deemed to retain unused directions in which new
+features can still be built with the current architecture. However, since there is no direct dependence on the loss, such activation-based criteria can only measure whether existing capacity is saturated, not whether further capacity would be useful.
+
+Predicting the benefit of capacity that does not yet exist is the central idea of several growing methods. Splitting methods (S2D, S2D-E, S3D) \citep{liu_splitting_2019,wang_energy-aware_2020,wu_steepest_2021} evaluate after convergence whether the network is stuck at a stationary point of the loss landscape that additional capacity would allow it to escape. More explicitly, the \emph{expressivity bottleneck} of \emph{TINY}
+\citep{verbockhaven_growing_2024} and the natural expansion increment
+$\Delta\eta_{\mathrm{SENN}}$ of \emph{SENN} \citep{mitchell_self-expanding_2024} characterize
+the part of the desired functional update that the current layer cannot
+express. Note that SENN's $\Delta\eta_{\mathrm{SENN}}$ is compared with an absolute threshold and a relative threshold $\Delta\eta_{\mathrm{SENN}}/\eta_0 > \tau$, where $\eta_0$ is the score of the current network. The use of a relative threshold can be linked to theoretical results \citep{csillagFunctionalGradientDescent2026} that provide convergence guarantees for a network for which the ratio of the bottleneck to the total gradient is small enough.
+
+\subsection{When to stop}
+
+Most growing methods follow a predetermined schedule, providing no notion of when to stop, and only a small number have an explicit (or implicit) notion of stopping, generally based on their \emph{when to grow} criteria. AutoGrow~\citep{wen_autogrow_2020} permanently freezes a sub-network when its validation-accuracy gain over a stopping window, $\Delta\mathrm{Acc}_{\mathrm{val}}$, falls below a threshold. Splitting (S2D, S2D-E, S3D)~\citep{liu_splitting_2019,wang_energy-aware_2020,wu_steepest_2021} methods also naturally terminate when a local minimum of the loss is reached, while grow-prune methods such as SENN~\citep{mitchell_self-expanding_2024} achieve a steady-state behavior by iterative growing and pruning.

@@ -1,0 +1,548 @@
+
+We consider a feedforward neural network with layers indexed by $l$. The size of layer $l$ is $C_l$, and $n$ denotes the number of data points. The forward pass through consecutive layers is:
+\begin{align}
+    x \longrightarrow \dots \longrightarrow \postact[l-1](x) \xrightarrow{\;W_l\;} \preact[l](x) \xrightarrow{\;\;\sigma\;\;} \postact[l](x)  \longrightarrow \dots \longrightarrow f(x)
+\end{align}
+where $\preact[l]: \mathbb{R}^{C_0} \to \mathbb{R}^{C_l}$ and $\postact[l]: \mathbb{R}^{C_0} \to \mathbb{R}^{C_l}$ denote the function giving the pre- and post-activations at layer $l$, respectively.
+For $n$ batched samples, we stack activations row-wise: $\Postact[l] \in \mathbb{R}^{n \times C_l}$. The (negative) gradient of the loss with respect to pre-activations is similarly stacked: $\Gradpreact^{(l)} \in \mathbb{R}^{n \times C_{l}}$.
+Without loss of generality, we omit the index $l$ when we consider an object associated with a current layer $l$.
+
+\textbf{Width addition.} We aim to expand layer $l-1$ by adding $k$ new neurons. This is done by adding fan-in weights $\Fanin \in \mathbb{R}^{k \times C_{l-2}}$ and fan-out weights $\Fanout \in \mathbb{R}^{C_l \times k}$:
+\begin{align}
+    \postact[l-2](x) \overset{\Fanin}{\xrightarrow{\hspace{2em}}} \preactext(x) \overset{\sigma}{\xrightarrow{\hspace{2em}}} \postactext(x) \overset{\Fanout}{\xrightarrow{\hspace{2em}}} \deltas(x)
+\end{align}
+where $\deltas(x) =  \Fanout \sigma \left(\Fanin \postact[l-2](x) \right)$ and $x$ is the network input.
+Hence, the change to the pre-activation at layer $l$ is $\preact[l] \leftarrow \preact[l] + \deltas$, as shown in Fig.~\ref{fig:width-addition}.
+
+\textbf{Layer addition.} Alternatively, we can grow the depth of the network by adding a new layer. In particular, we replace the weights $W_l$ with $W_l \to \Omega \circ \sigma \circ \Psi$, as shown in Fig.~\ref{fig:layer-addition}. Abstractly, one can imagine layer addition as the insertion of a zero-width layer, followed by a width addition step. Although a zero-width layer is not a valid network on its own, this framing provides a natural way to understand how large a new layer to add, and how to initialize these new parameters.
+
+We categorize neuron addition methods by the goal of their initialization strategy:
+\begin{figure}
+    \centering
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includestandalone[width=\linewidth]{figures/neuron_addition_new_r}
+        \caption{Width addition in layer $l-1$.}
+        \label{fig:width-addition}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includestandalone[width=\linewidth]{figures/layer_addition_new_r}
+        \caption{Layer addition in layer $l-1$.}
+        \label{fig:layer-addition}
+    \end{minipage}
+\end{figure}
+\begin{itemize}\itemsep0em
+    \item \textbf{Purely function-preserving}: the network output is unchanged after growth (but its gradient may change!).
+    \item \textbf{Function geometry-based}: Methods optimizing local objectives such as gradient norm or loss decrease. They can be function-preserving or function-improving.
+    \item \textbf{Training dynamics-based}: New weights are initialized to optimize training dynamics.
+\end{itemize}
+
+\subsection{Vanilla function-preserving initialization}
+\label{sec:function_preserving}
+
+How can we transfer knowledge from one network to a new, larger network? A network morphism $A', \theta' = \T(A, \theta)$ is called \emph{function-preserving} if
+\begin{align}
+    \forall  x \in \D, \quad f_{A', \theta'}(x) = f_{A, \theta}(x) \, .
+\end{align}
+
+\textbf{Net2Net.} In early work, Net2Net~\citep{chen_net2net_2016} proposed a \emph{Net2WiderNet} operation: increasing the width of a layer by splitting the existing weights of a neuron into two new neurons, with the same input weight as the original, but with half the output weights, to compensate for the duplication. In practice, to break symmetry, a small amount of random noise is added to the new neurons.
+
+\textbf{Network Morphism.}~\citet{wei_network_2016} explore other function-preserving network morphisms as an alternative to neuron splitting. Indeed, for a linear network and in the absence of activation functions, any decomposition of the weight matrix $\boldsymbol{W} = \boldsymbol{A}\boldsymbol{B}$ into two shape-compatible matrices is a valid function-preserving morphism. Network Morphism aims to find the least sparse matrix decomposition.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Exploiting function geometry}
+\label{sec:function_geometry}
+
+The methods in this section use local function information to optimize the initialization of new neurons. We define $\Gradpreact \in \mathbb{R}^{n \times \cp}$ as the (negative) gradient of the loss w.r.t.\ pre-activations, stacked over $n$ samples, and the residual gradient $\Bottleneck$ as the gradient component that cannot be addressed by updating existing fan-out weights of the increased layer---it identifies an \emph{expressivity bottleneck}.
+
+The geometrical methods here use either the classical gradient, some form of natural gradient, or both. For classical gradient descent, the gradient is computed for a small, in Euclidean norm, change of parameters $\dtheta$. In contrast, the natural gradient is computed for a small change of the function itself, such that parameters $\theta$ and $\theta'$ are close if $\norm{f_{\theta} - f_{\theta'}}$ is small.
+K-FAC~\citep{dangelKroneckerfactoredApproximateCurvature2025} proposes to approximate this norm when changing $W_l$ to $W_l+\delta W_l$ as $\frob{\sqrtS \delta W_l \sqrtA_{l-1}}$,
+where $A_{l-1} := \postact[l-1] \transp{\postact[l-1]}$ is the covariance of the input of the layer
+and $S:= \trans{\frac{\partial f}{\partial \preact[l]}} \frac{\partial f}{\partial \preact[l]}$ is the covariance of the Jacobians of the loss with respect to the layer output.
+We can say that $A_{l-1}$ accounts for curvature before layer $l$ and $S$ after.
+
+\subsubsection{Function-preserving geometric methods}
+
+These methods initialize with $\deltas = 0$, preserving the network function, but optimize $(\Fanin, \Fanout)$ to maximize trainability.
+
+\textbf{GradMax}~\citep{evci_gradmax_2022} and SENN~\citep{mitchell_self-expanding_2024} aim to maximise the loss decrease after the next gradient step on the new weights. To achieve this, they maximize the norm of the gradient w.r.t.\ new weights. GradMax initializes $\Fanin = 0$, ensuring $\deltas = 0$, then maximizes the gradient norm w.r.t.\ $\Fanin$ with the constraint $\trans{\Fanout} \Fanout  = I_{\cext}$:
+\begin{align}\label{eqn:gradmax}
+\Fanout^* = \argmax_{\frob{\Fanout} \leq 1} \frob{\nabla_{\Fanin} \loss(f_{\Fanin, \Fanout})}^2
+\end{align}
+
+\textbf{SENN}~\citep{mitchell_self-expanding_2024} extends GradMax by considering a \emph{natural gradient} descent step instead of standard gradient descent and switching from $\Fanin = 0$ to $\Fanout = 0$.
+It maximizes, using K-FAC approximation, the gradient for the natural gradient norm of $\begin{smallpmatrix}
+    \Fanout \\ W_l
+\end{smallpmatrix}$, termed the \emph{natural expansion score}
+\begin{equation}\label{eq:senn_main}
+\eta_{\text{SENN}} \coloneqq \frob{F^{-\tfrac{1}{2}}\nabla_{\begin{smallpmatrix}
+\Fanout{} \\
+W
+\end{smallpmatrix}}\loss(f)}^2
+\end{equation}
+where $F$ is (the K-FAC approximation of) the Fisher matrix defined in App.~\ref{sec:senn}. However, in practice, SENN maximizes the norm of the gradient of $\Fanout$ only, backpropagating the residual gradient $\Bottleneck$ to avoid redundancy with existing neurons.
+
+\textbf{NORTH}~\citep{maile_when_2022} takes a geometric perspective: new neurons should add \emph{new directions} in activation space, orthogonal to existing activations. It seeks $\Fanin$ such that new activations $\Postactext$ are orthogonal to existing activations $\Postact[l-1]$.
+
+\subsubsection{Function-improving geometric methods}
+
+These methods initialize with $\deltas \neq 0$, directly improving the loss at initialization.
+
+\textbf{Splitting methods.} One might wonder whether the Net2Net split of one neuron into two, with equally divided weights, is optimal. In S2D~\citep{liu_splitting_2019}, it has been shown that, for an infinitesimal change in the parameters $\|\theta_{t+1} - \theta_t\| \le \epsilon$, this choice of split leads to the fastest decrease of the loss. Consider the post-activation output of a particular neuron $i$ at layer $l-1$. Splitting replaces the original neuron with two neurons:
+\begin{align}
+    \sigma(\preact[l-1]_i) \to \frac{1}{2} \left( \sigma(\theta_1 \cdot \postact[l-2] ) + \sigma(\theta_2 \cdot \postact[l-2]) \right)
+\end{align}
+The influence of splitting on the loss is characterized by the minimum eigenvalue $\lambda_{\min}$ of the \emph{splitting matrix}:
+\begin{equation}\label{eqn:splitting}
+S(\theta) = \underset{x \sim \D}{\mathbb{E}}\left[ \nabla_{\preact[l-1]} \loss(f(x)) \nabla_{\theta\theta}^2 \sigma(\theta \cdot \postact[l-2](x)) \right],
+\end{equation}
+This ``semi-Hessian'' matrix and its eigenvalues provides a notion of splitting stability: when $\lambda_{\min} > 0$, the loss cannot be improved by splitting; when $\lambda_{\min} < 0$, the maximum decrease is achieved with parameter updates:
+\begin{align}
+\fanin_{1} &= \theta + \epsilon\, v_{\min}(S(\theta)), \quad
+\fanin_{2} = \theta - \epsilon\, v_{\min}(S(\theta))
+\end{align}
+yielding loss decrease $\Delta \loss \geq \frac{\epsilon^2}{2} \lambda_{\min} + \mathcal{O}(\epsilon^3)$. Since the contribution to loss appears at $\mathcal{O}(\epsilon^2)$, splitting can be thought of as a second-order method to escape local minima. In S2D-E~\citep{wang_energy-aware_2020}, S2D is improved to include energy-aware constraints and a fast gradient-based approximation $S(\theta)$, while S3D~\citep{wu_steepest_2021} generalizes the types of splits considered to non-convex combinations of arbitrary sign.
+
+\textbf{TINY}~\citep{verbockhaven_growing_2024} seeks to find new neurons whose contribution $\deltas$ most directly reduces the loss. Using a first-order Taylor expansion:
+\begin{align}
+    \mathcal{L}(s + \deltas) = \mathcal{L}(s) + \langle \nabla_s \mathcal{L}, \deltas \rangle + o(\|\deltas\|)
+\end{align}
+TINY first aligns the contribution of existing parameters with $\nabla_s \mathcal{L}$, then the contribution of the new neurons with the residual gradient $\Bottleneck$ to avoid redundancy with existing neurons. Linearizing the activation function $\sigma(x)$ around $0$, this becomes a low-rank matrix approximation:
+\begin{align}\label{eq:tiny_main}
+\Fanin^*, \Fanout^* = \argmin_{\Fanin, \Fanout} \frob{\Bottleneck - \Postact[l-2] \trans{\Fanin} \trans{\Fanout}}^2
+\end{align}
+solved in closed form using two SVDs.
+
+\textbf{NeST}~\citep{daiNeSTNeuralNetwork2019} targets sparse networks where connections are added incrementally. Justified by Hebbian theory ``Neurons that fire together wire together''~\citep{lowel_1992}, NeST looks at the correlation between the activation of neuron $i$ in layer $l-2$ and the gradient of neuron $j$ in layer $l$ to decide which neuron to add. They add a neuron with a single non-zero fan-in weight and a single non-zero fan-out weight.
+NeST uses the same mechanism to densify layers except that they consider interaction between two successive layers, \eg{} $l-1$ and $l$.
+
+\textbf{Firefly}~\citep{wu_firefly_2020} combines splitting existing neurons, adding new neurons, and adding new layers. It optimizes the candidate parameters through classical gradient descent and estimates the contribution of each candidate neuron. Finally, only the architecture changes with the largest contributions are kept.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{A unified framework for geometric methods}
+\label{sec:unified}
+
+Many of the above methods, even if they seem different at first sight, can be unified under the same objective with different choices of target, metric, and constraints. Following the work of \citep{verbockhavenSpottingExpressivityBottlenecks2025} that compares TINY to GradMax and NORTH, we propose the following theorem. Proofs can be found in App.~\ref{app:proofs}.
+\begin{theorem}[Unified objective for neuron addition]\label{thm:unified_obj_main_text}
+Many of the gradient-informed methods above can be derived from the following optimization problem:
+\begin{align}\label{eqn:unified_obj}
+& \argmin_{\Fanin, \Fanout} \frob{T \isqrtS - \sigma(\Postact[l-2] \trans{\Fanin}) \trans{\Fanout} \sqrtS}\\
+&\propto \argmax_{\Fanin, \Fanout; \frob{\sqrtAext \trans{\Fanout} \sqrtS} \le 1} \scalarp{T \isqrtS, \frac{1}{n} \Postactext \trans{\Fanout} \sqrtS}
+\end{align}
+where:
+\begin{itemize}
+    \item $T \in \mathbb{R}^{n \times \cp}$ is the target: gradient $\Gradpreact$ or residual gradient $\Bottleneck$
+    \item $\covgrad \in \mathbb{R}^{\cp \times \cp}$ is the post-network metric $\covgrad := \EE_x\left[\transp{\frac{\partial f}{\partial \preact[l]}(x)} \frac{\partial f}{\partial \preact[l]}(x) \right]$
+    \item $\Aext \in \mathbb{R}^{\cext \times \cext}$ is the activation covariance of the extended activations $\Aext:= \frac{1}{n} \transp{\Postactext} \Postactext$ and $\widehat{\Aext}$ is its approximation for a linearized activation function (which is justified for $\Fanin \approx 0$)
+    \item $\sigma$ is the activation function (or its linear approximation)
+    \item Additional constraints may be imposed on $\Fanin$ and $\Fanout$.
+\end{itemize}
+
+\noindent Table~\ref{tab:unified} summarizes the specialization for each method. We also add a column indicating whether the method tries to satisfy the NORTH orthogonality constraint $\Postactext \perp \Postact[l-1]$ (in the case of TINY it is only satisfied for linearized activation functions).
+\end{theorem}
+
+\begin{table}[t]
+\centering
+\caption{Neuron addition methods within the unified objective~\eqref{eqn:unified_obj}.}
+\label{tab:unified}
+\small
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Method} & $T$ & $\covgrad$ & $\Aext$ & \textbf{Constraint} & $\Fanin$ & $\Fanout$ & $\Postactext \perp \Postact[l-1]$ \\
+\midrule
+TINY  & $\Bottleneck$ & $I_{\cp}$ & $\widehat{\Aext}$ & -- & $\Fanin^*$ & $\Fanout^*$ & Yes \\
+GradMax & $\Gradpreact$ & $I_{\cp}$ & $\Fanin \trans{\Fanin}$ & $\trans{\Fanout}\Fanout = I$ & $0$ & $\Fanout^*$ & No \\
+SENN & $\Bottleneck$ & $\covgrad$ & $\Aext$ & -- & $\Fanin^*$ & $0$ & Yes \\
+NeST & $\Gradpreact$ & $I_{\cp}$ &  $\Fanin \trans{\Fanin}$ & $\|\Fanin\|_0 = \|\Fanout\|_0 = 1$ & $\Fanin^*$ & $\Fanout^*$ & No \\
+\bottomrule
+\end{tabular}
+\vspace{-1em}
+\end{table}
+
+The key insight is that all methods minimize the distance between the new neurons' contribution and some target gradient signal, differing in:
+\begin{enumerate}
+    \item \textbf{Target}: whether they use the raw gradient $\Gradpreact$ or residual gradient $\Bottleneck$ (which avoids redundancy with existing neurons).
+    \item \textbf{Metric} on parameters: whether they use natural norm integrating pre- and post-network curvature, semi-natural norm only integrating pre-network curvature ($\covgrad = I_{\cp}$), or standard Euclidean norm
+     ($\covgrad = I_{\cp}$ and $\Aext = I_{\cext}$).
+    \item \textbf{Constraints}: sparsity ($\|\cdot\|_0 = 1$), or function preservation ($\Fanin = 0$ or $\Fanout = 0$).
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Improving training dynamics}
+\label{sec:training_dynamics}
+
+Instead of focusing solely on function preservation, or immediate improvements in e.g. the loss, Variance Transfer~\citep{yuan_accelerated_2023} uses a function-preserving initialization with the weight distribution and learning rate chosen to promote future training dynamics. Note that, for any matrices $V \in \mathbb{R}^{k/2\times C_{l-2}}$ and $Z \in \mathbb{R}^{C_l \times k/2}$, the addition of new neurons with a minus sign inserted
+\begin{align}
+    \Fanin = \begin{bmatrix} V \\ V \end{bmatrix}, \qquad
+    \Fanout = \begin{bmatrix} Z & -Z \end{bmatrix}
+\end{align}
+ensures that the contributions of the new weights cancel, preserving the network function. Inspired by studies on how to optimally transfer hyperparameters across networks of different widths~\citep{yang_tensor_2021}, Variance Transfer initializes the weights of the final output layer as $Z \sim \mathcal{N}(0, 1/\textrm{fan\_in}^2)$ rather than the usual $1/\textrm{fan\_in}$. When the weight matrix is enlarged, layer weights are rescaled by $\boldsymbol{W}_{t+1}=\boldsymbol{W}_t \cdot \frac{C_t}{C_{t+1}}$ to preserve variance.
+
+Furthermore, the learning rate is adapted to the growth cycle of each sub-network. Partitioning the weights $\mathbf{W}_T$ of the entire network according to the growth stage $t \in [0, T]$ at which they were added, $\mathbf{W} = \{W_0, W_{\Delta 1}, \ldots, W_{\Delta T} \}$, each sub-network $W_{\Delta t}$ is assigned a learning rate:
+\begin{align}
+\eta_t = \eta_0 \, \frac{\|\boldsymbol{W}_{\Delta t}\|_F}{\|\boldsymbol{W}_{0}\|_F}
+\end{align}
+where $\eta_0$ is the base learning rate and $\|\cdot\|_F$ is the Frobenius norm. This compensates for the fact that different subnetworks are trained for a different number of epochs. These modifications to the vanilla function-preserving morphism result in a surprisingly strong baseline.
+
+Tables~\ref{tab:growing_methods} and~\ref{tab:growing_decisions} provide a summary of the key growth metric for each of the main width and depth growing methods, as well as how each one answers the key questions of: how to grow, where to grow, when to grow, and when to stop.
+
+\newcommand{\growingdash}{\multicolumn{1}{c}{--}}
+
+\begin{table*}[t!]
+\centering
+\caption{Comparison of growing methods by their principal metric or objective, growth mechanism, and supported type of architectural growth.}
+\label{tab:growing_methods}
+\fontsize{5.5pt}{6.5pt}\selectfont
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{
+    p{0.20\linewidth}
+    >{\centering\arraybackslash}p{0.14\linewidth}
+    >{\centering\arraybackslash}p{0.16\linewidth}
+    >{\centering\arraybackslash}p{0.07\linewidth}
+    >{\centering\arraybackslash}X
+    >{\centering\arraybackslash}p{0.07\linewidth}
+    >{\centering\arraybackslash}p{0.07\linewidth}
+}
+\toprule
+\textbf{Method}
+& \multicolumn{3}{c}{\textbf{Growth Metric}}
+& \textbf{How}
+& \textbf{Width}
+& \textbf{Depth} \\
+
+\midrule
+
+\textbf{Net2Net}
+& \growingdash
+& \growingdash
+& \growingdash
+& \mbox{function preserving}
+& $\checkmark$
+& $\checkmark$ \\
+
+\textbf{Net. Morph.}
+& \growingdash
+& \growingdash
+& \growingdash
+& \mbox{function preserving}
+& $\checkmark$
+& $\checkmark$ \\
+
+\textbf{Variance Transfer}
+& \growingdash
+& \growingdash
+& \growingdash
+& \mbox{function preserving}
+& $\checkmark$
+& \\
+
+\textbf{AdaNet}
+& \mbox{risk--complexity}
+& $F(\mathbf{w})$
+& \eqref{eq:adanet_main}
+& $\min F(\mathbf{w})$
+& $\checkmark$
+& $\checkmark$ \\
+
+\midrule
+
+\textbf{GradMax}
+& \mbox{gradient norm}
+& $\|\nabla_{\Fanin}\loss(f)\|$
+& \eqref{eqn:gradmax}
+& $\max\|\nabla_{\Fanin}\loss(f)\|$
+& $\checkmark$
+& \\
+
+\textbf{TINY}
+& \mbox{exp. bottleneck}
+& $\|\Bottleneck\|$
+& \eqref{eq:tiny_main}
+& $\operatorname{SVD}(\Bottleneck)$
+& $\checkmark$
+& \\
+
+\textbf{NeST}
+& \mbox{act.--grad. correlation}
+& $|B_{-2}|$
+& \growingdash
+& \mbox{sparse fan-in/out init.}
+& $\checkmark$
+& \\
+
+\textbf{SENN}
+& \mbox{expansion score}
+& $\Delta\eta_{\mathrm{SENN}}$
+& \eqref{eq:senn_main}
+& $\max\Delta\eta_{\mathrm{SENN}}$
+& $\checkmark$
+& $\checkmark$ \\
+
+\textbf{Splitting}
+& \mbox{min. eigenvalue}
+& $\lambda_{\min}(S(\theta))$
+& \eqref{eqn:splitting}
+& $\mathbf v_{\min}(S(\theta))$
+& $\checkmark$
+& \\
+
+\textbf{Firefly}
+& \mbox{neuron contribution}
+& $s_i$
+& \growingdash
+& $\max|s_i|$
+& $\checkmark$
+& $\checkmark$ \\
+
+\textbf{NORTH}
+& \mbox{eff. rank}
+& $\phi_a^{\mathrm{ED}}$
+& \eqref{eq:north_main}
+& $\Postactext\perp\Postact[l-1]$
+& $\checkmark$
+& \\
+
+\midrule
+
+\textbf{LipGrow}
+& \mbox{scaled Lipschitz}
+& $L(F)/L_0$
+& \growingdash
+& \mbox{clone weights}
+&
+& $\checkmark$ \\
+
+\textbf{FRAGrow}
+& \mbox{overfitting risk}
+& $\mathrm{ORL}$
+& \eqref{eq:fragrow_main}
+& \mbox{clone weights}
+&
+& $\checkmark$ \\
+
+\textbf{AutoGrow}
+& \mbox{validation gain}
+& $\Delta\mathrm{Acc}_{\mathrm{val}}$
+& \growingdash
+& gaussian
+&
+& $\checkmark$ \\
+
+\textbf{SensLI}
+& \mbox{layer sensitivity}
+& $\|\nabla_{\theta^\mathrm{new}_l}\mathcal L\|$
+& \eqref{eq:sensli_main}
+& $f'=f$, $\nabla_{\theta_{\rm new}}\mathcal L\ne0$
+&
+& $\checkmark$ \\
+
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\begin{table*}[b!]
+\centering
+\caption{Summary of the criteria used by growing methods to decide when to grow, where to grow and when to stop. Here, $\tau_g$, $\tau_\ell$, and $\tau_s$ denote generic method-specific thresholds for growth, location eligibility, and stopping, respectively; identical subscripts indicate the same threshold. A dash denotes non-adaptive behavior: a predefined schedule for \emph{when to grow} and \emph{when to stop}, and growing either everywhere at once or in a round-robin fashion for \emph{where to grow}.}
+\label{tab:growing_decisions}
+\fontsize{5.5pt}{6.5pt}\selectfont
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{
+    p{0.20\linewidth}
+    >{\centering\arraybackslash}p{0.14\linewidth}
+    >{\centering\arraybackslash}p{0.14\linewidth}
+    >{\centering\arraybackslash}p{0.05\linewidth}
+    >{\centering\arraybackslash}p{0.14\linewidth}
+    >{\centering\arraybackslash}X
+    >{\centering\arraybackslash}p{0.12\linewidth}
+}
+\toprule
+\textbf{Method}
+& \multicolumn{3}{c}{\textbf{Growth Metric}}
+& \textbf{When}
+& \textbf{Where}
+& \textbf{Stop} \\
+\midrule
+
+\textbf{Net2Net}
+& \growingdash & \growingdash & \growingdash & \growingdash & \growingdash & \growingdash \\
+
+\textbf{Net. Morph.}
+& \growingdash & \growingdash & \growingdash & \growingdash & \growingdash & \growingdash \\
+
+\textbf{Variance Transfer}
+& \growingdash & \growingdash & \growingdash & \growingdash & \growingdash & \growingdash \\
+
+\textbf{AdaNet}
+& \mbox{risk--complexity}
+& $F(\mathbf{w})$
+& \eqref{eq:adanet_main}
+& $F(\mathbf{w})<\tau_g$
+& $\min F(\mathbf{w})$
+& $F(\mathbf{w})\ge\tau_g$ \\
+
+\midrule
+
+\textbf{GradMax}
+& \mbox{gradient norm}
+& $\|\nabla_{\Fanin}\loss(f)\|$
+& \eqref{eqn:gradmax}
+& \growingdash & \growingdash & \growingdash \\
+
+\textbf{TINY}
+& \mbox{exp. bottleneck}
+& $\|\Bottleneck\|$
+& \eqref{eq:tiny_main}
+& \growingdash & \growingdash & \growingdash \\
+
+\textbf{NeST}
+& \mbox{act.--grad. correlation}
+& $|B_{-2}|$
+& \growingdash
+& \growingdash
+& $\max |B_{-2}|$
+& \growingdash \\
+
+\textbf{SENN}
+& \mbox{expansion score}
+& $\Delta\eta_{\mathrm{SENN}}$
+& \eqref{eq:senn_main}
+& $\Delta\eta_{\mathrm{SENN}}>\tau_g$
+& $\max\Delta\eta_{\mathrm{SENN}}$
+& $\Delta\eta_{\mathrm{SENN}}\le\tau_g$ \\
+
+\textbf{Splitting}
+& \mbox{min. eigenvalue}
+& $\lambda_{\min}(S(\theta))$
+& \eqref{eqn:splitting}
+& $\lambda_{\min}<0$
+& $\min\lambda_{\min}$
+& $\lambda_{\min}\ge0$ \\
+
+\textbf{Firefly}
+& \mbox{neuron contribution}
+& $s_i$
+& \growingdash
+& \growingdash
+& $\max |s_i|$
+& \growingdash \\
+
+\textbf{NORTH}
+& \mbox{eff. rank}
+& $\phi_a^{\mathrm{ED}}$
+& \eqref{eq:north_main}
+& $\phi_a^{\mathrm{ED}}>\tau_g$
+& $\phi_a^{\mathrm{ED}}>\tau_\ell$
+& \growingdash \\
+
+\midrule
+
+\textbf{LipGrow}
+& \mbox{scaled Lipschitz}
+& $L(F)/L_0$
+& \growingdash
+& $L(F)/L_0>\tau_g$ & \growingdash & \growingdash \\
+
+\textbf{FRAGrow}
+& \mbox{overfitting risk}
+& $\mathrm{ORL}$
+& \eqref{eq:fragrow_main}
+& $I(\mathrm{ORL})$ & \growingdash & \growingdash \\
+
+\textbf{AutoGrow}
+& \mbox{validation gain}
+& $\Delta\mathrm{Acc}_{\mathrm{val}}$
+& \growingdash
+& \growingdash
+& \growingdash
+& $\Delta\mathrm{Acc}_{\mathrm{val}}<\tau_s$ \\
+
+\textbf{SensLI}
+& \mbox{gradient norm}
+& $\|\nabla_{\theta^\mathrm{new}_l}\mathcal L\|$
+& \eqref{eq:sensli_main}
+& $\|\nabla_{\theta^\mathrm{new}_l}\mathcal L\|\ge\tau_g$
+& $\max \|\nabla_{\theta^\mathrm{new}_l}\mathcal L\|$
+& \growingdash \\
+
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Depth growth}
+\label{sec:adding_layers}
+
+Depth is grown by three operators, treated in turn. Serial deepening replaces a layer on the main path by a short sequence. Residual insertion replaces an activation by a shape-preserving branch. Parameter reuse builds the new depth from weights that have already been trained.
+
+\subsubsection{Serial deepening}
+
+The most direct way to add depth is to replace a single layer by a short sequence of layers on the same path. Following Fig.~\ref{fig:layer-addition}, the affine map $u\mapsto W_lu$, evaluated at $u=\postact[l-1](x)$, becomes
+\begin{align}
+u\mapsto \Omega\,\sigma(\Psi u).
+\end{align}
+All the methods below keep the trained map in the first factor, $\Psi=W_l$, and differ only in their choice of the new matrix $\Omega$. Preserving the function constrains that choice through the product $\Omega\Psi=W_l$, a constraint the methods below either enforce or deliberately break.
+
+\textbf{Net2DeeperNet}~\citep{chen_net2net_2016} uses the identity fill $(\Psi,\Omega)=(W_l,I)$, so that the inserted path reduces to $u\mapsto\sigma(W_lu)$. When the original layer already applies $\sigma$ after $W_lu$, and the activation is idempotent, $\sigma\circ\sigma=\sigma$, as is the case for ReLU, this post-activation is left unchanged and the morphism is function-preserving.
+
+\textbf{Network Morphism}~\citep{wei_network_2016} relaxes the identity fill to any factorization satisfying $\Omega\Psi=W_l$ (or its convolutional analogue), thereby allowing a denser pair than $(W_l,I)$. When $\sigma$ is not idempotent, they replace it by the parametric family $\sigma^a=(1-a)\sigma+a\,\mathrm{id}$, initialized at $a=1$ so that $u\mapsto\Omega\sigma^a(\Psi u)$ again reduces to $W_lu$ at insertion, and then train $a$ with the task loss.
+
+The same serial topology can also be used with an $\Omega$ that does not satisfy $\Omega\Psi=W_l$, in which case the function is not preserved. On PlainNet architectures, AutoGrow~\citep{wen_autogrow_2020} uses a random fill $(\Psi,\Omega)=(W_l,\Omega_{\mathrm{rand}})$, whereas FRAGrow~\citep{wu_when_2024} copies the trained layer, $(\Psi,\Omega)=(W_l,W_l)$. Such constructions remain the operator of choice for plain, non-residual networks; in modern residual architectures they are largely superseded by the insertions described next.
+
+\subsubsection{Residual insertion}
+
+Given activation $h$ of a layer, we can replace it by a pair of activations $h_{\mathrm{in}}$ and $h_{\mathrm{out}}$ such that
+\begin{align}\label{eqn:residual_insertion}
+h_{\mathrm{out}} = h_{\mathrm{in}} + F(h_{\mathrm{in}}),\qquad h_{\mathrm{in}}=h,
+\end{align}
+Compared with serial deepening, $F$ need only be shape-preserving: its input and output dimensions must match, which excludes downsampling blocks. Furthermore, function-preservation only requires $F(h_{\mathrm{in}}) = 0$.
+
+\textbf{Inheriting from width growth.} When $F$ is a single hidden layer, any width-expansion method that supports growth from an empty hidden layer canonically becomes a depth-growth method via residual insertion. The unified geometrical view of first-order width-growth methods is inherited as well. Theorem~\ref{thm:unified_obj_main_text} applies with the incoming activations $\Postact[l-2]$ read as $h_{\mathrm{in}}$, when the skip connection is the identity. This recovers the width-addition update of Sec.~\ref{sec:neuron_addition_problem},
+\begin{align}\label{eqn:residual_width}
+\preact[l] \leftarrow \preact[l] + \deltas, \qquad \deltas = \Fanout\sigma(\Fanin \postact[l-2]).
+\end{align}
+An empty layer, taken in isolation, has an empty tangent space, so $\Bottleneck=\Gradpreact$ for TINY~\citep{verbockhaven_growing_2024} and the orthogonality constraint of NORTH~\citep{maile_when_2022} is vacuous. GradMax~\citep{evci_gradmax_2022} takes $\Fanin=0$ and optimizes $\Fanout$; SENN~\citep{mitchell_self-expanding_2024} and GradMax-Opt take $\Fanout=0$ and optimize $\Fanin$.
+
+\textbf{Function preservation.} Initializing $F(h_{\mathrm{in}})=0$ is enough to preserve the function, but a gradient must still be able to flow through the new parameters if the expansion is to be trainable. For a single hidden layer one may set $\Fanin=0$ or $\Fanout=0$, but not both, or both gradients are zero and remain so.\footnote{$\Fanout = 0$ preserves the function for any activation, whereas $\Fanin = 0$ also requires $\sigma(0) = 0$ and a zero branch bias, which holds for ReLU, GELU and tanh but not for the sigmoid.} The same one-sided silence is often realized by zeroing the last linear map, or the affine parameters of the last normalization layer, so that earlier weights can remain nonzero and carry gradient: SensLI~\citep{kreisSensLISensitivityBasedLayer2026} zeros $W_2$; AutoGrow~\citep{wen_autogrow_2020} the BatchNorm affine $\gamma,\beta$; Gesmundo--Maile~\citep{gesmundo_composable_2023} zeros the MHA and MLP projections; and $G_{\mathrm{zero}}$~\citep{du_stacking_2024} zeros the new output parameters.
+
+\textbf{Masked growth.} Gating the insertion as $h_{\mathrm{out}}=h_{\mathrm{in}}+\alpha F(h_{\mathrm{in}})$ with $\alpha=0$ leaves $F$ unconstrained. MSG~\citep{yao_msg_2024} grows transformers this way, raising a transient mask linearly to $1$ over a fixed number of steps.
+
+\textbf{Neural ODE.} A residual block $h_{\mathrm{out}}=h_{\mathrm{in}}+F(h_{\mathrm{in}})$ can be viewed as one Euler step of $\dot{h}=F(h)$. LipGrow~\citep{dong_towards_2020} replaces that step by two half-steps (clone $F$, rescale the increment), i.e.\ a finer discretization of the same continuous flow. That is only approximately function-preserving, and only while $\mathrm{Lip}(F)$ stays small---which is why they use the Lipschitz constant as a when-to-grow trigger (Sec.~\ref{sec:where_when}).
+
+\subsubsection{Reusing parameters}
+
+The last family builds the new depth from parameters that have already been trained. Unlike residual insertion, we do not have $F(h_{\mathrm{in}})=0$. Let $B=(B_1,\ldots,B_L)$ be a sequence of blocks with parameters $\theta=(\theta_1,\ldots,\theta_L)$, and write $f_B=B_L\circ\cdots\circ B_1$ for the function output. A reuse operator produces a longer sequence $B'=(B'_1,\ldots,B'_{L'})$, $L'>L$, by a linear mix
+\begin{align}\label{eqn:reuse}
+\theta'_k = \sum_{j=1}^{L} w_{kj}\,\theta_j, \qquad k=1,\ldots,L'.
+\end{align}
+The grown blocks sit at depths for which those weights were not trained, so $f$ changes. The exception is $G_{\mathrm{zero}}$~\citep{du_stacking_2024}, already discussed above: it is residual silence, not reuse. Copy and nearest-neighbor interpolation are the 0-1 special cases $w_{k,\pi(k)}=1$, i.e.\ $\theta'_k=\theta_{\pi(k)}$; a learned $w$ is the remainder of the family.
+
+\textbf{Copy.} When $w$ is a 0-1 assignment, each new block is a copy of a source block. The default is to compose the trained stack with itself,
+\begin{align}\label{eqn:gstack}
+f_{B'} = f_B\circ f_B, \qquad \pi=(1,\ldots,L,1,\ldots,L),
+\end{align}
+which is $G_{\mathrm{stack}}$~\citep{du_stacking_2024} and the depth operator of Progressive BERT~\citep{gu_bert_2021}, usually applied in stages: train $L$ blocks, stack, continue. Because $f_B\circ f_B\neq f_B$, the grown network is not $f$. The remaining choices are which window to copy and where to put it. MIDAS~\citep{saunshi_inductive_2024} takes $\pi$ to repeat a contiguous middle segment and expands from the middle rather than appending on top, which they motivate as unrolling a looped block. Copies inherit the shapes of the source blocks, so the residual-stream dimension is left unchanged.
+
+\textbf{Interpolate.} Interpolation uses the same 0-1 rule with a different $\pi$: new blocks are inserted \emph{between} existing ones and each is filled from its nearest trained neighbor, rather than appending a copy of a window. AutoProg~\citep{li_autoprog_2022} is this nearest-neighbor $\pi$, implemented as a weight-nesting elastic supernet: a subnetwork runs a subset of the intercalated blocks, so growing depth is selecting a denser subset rather than allocating a new tensor. The source need not be the live weights. MoGrow~\citep{li_autoprog_2022} applies the same $\pi$ to an exponential moving average of $\theta$, which reduces the jump in $f$ without forcing the new blocks to be silent.
+
+\textbf{Learned map.} Copy and nearest-neighbor interpolation fix $w$ in advance. LiGO~\citep{wang_ligo_2023} learns it, so~\eqref{eqn:reuse} is $\theta'=M(\theta)$ with $M$ the linear map given by $w$. A dense $w$ would couple every source block to every target block; they factor $M$ as a depth mixture $w\otimes I$ and an optional width Kronecker map, which makes $M$ cheap enough to train. The 0-1 assignments above are recovered by particular $w$. $M$ is fit by a short inner loop on the training loss of the grown network and then discarded: $\theta'$ is only an initialization. The $G_{\mathrm{learn}}$ operator of \citet{du_stacking_2024} is this family.
+
+Quantitative comparisons of depth-growing methods are collected in Table~\ref{tab:results_depth_growing}, while the timing and placement of growth events are treated in Sec.~\ref{sec:where_when}, and their transformer-specific realizations in Sec.~\ref{sec:transformers}. Growing a topology that is not a chain requires an additional choice of location, which we discuss in Sec.~\ref{sec:dag_growth}.
+
+\subsection{Growing Transformers}\label{sec:transformers}
+
+Transformer growth follows essentially the same growing approaches as the wider literature, described above, but one can grow along multiple dimensions. Width growth may increase the token embedding dimension, the intermediate FFN dimension, or the number of self-attention heads, while depth growth adds complete transformer blocks~\citep{yao_msg_2024}. Growth can also be combined with increases in sequence length or image resolution~\citep{gu_bert_2021,li_autoprog_2022}.
+
+For depth growth, a common approach is to initialize added blocks by copying trained blocks, often termed \emph{stacking}~\citep{gong_stacking_2019,du_stacking_2024}. Progressive Stacking repeatedly duplicates the network to increase its depth~\citep{gong_stacking_2019}, while MIDAS grows by copying subsets of blocks and studies insertion within the network~\citep{saunshi_inductive_2024}. For width growth, bert2BERT adapts Net2Net's function-preserving parameter duplication and additionally uses information from adjacent layers; it combines widening with depth expansion by stacking~\citep{chen_bert2bert_2022}.
+LiGO instead learns a linear parameter-transfer map, factorized across width and depth using Kronecker structure~\citep{wang_ligo_2023}.
+These approaches address the initialization question of Sec.~\ref{sec:neuron_addition_problem} through direct reuse or learned combinations of existing weights.
+
+Several methods are purely function-preserving. LEMON initializes new parameters to ensure function-preservation, accounting for normalisation when widening and using zero-initialized residual contributions when deepening~\citep{wang_lemon_2023}.
+MSG uses masks to initially suppress the contribution of new components and progressively activates them during training~\citep{yao_msg_2024}, ensuring function preservation regardless of the choice of weight initialization.
+
+Staged Training~\citep{shen_staged_2022} treats growth as a transformation of the training state: it transfers optimizer statistics alongside model weights and adjusts the learning-rate schedule to support continued training. In the same spirit as Variance Transfer (Sec.~\ref{sec:training_dynamics}),
+SPARKLING focuses on preserving hidden-activation scales, expressed through their root mean square, and breaking the symmetry between duplicated parameters~\citep{yu_sparkling_2026}.
+It retains the optimizer state for existing weights, and resets it only for new weights so that the duplicates receive different optimizer updates.

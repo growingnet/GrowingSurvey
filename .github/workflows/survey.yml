@@ -1,0 +1,90 @@
+name: survey
+
+on:
+  push:
+    branches:
+      - main
+    # Do not recompile and republish the PDF for changes that do not affect it.
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: survey-${{ github.ref }}
+  # Only cancel superseded PR builds: never interrupt a release update.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      # Pushes to `main` are checked out on the `main` branch.
+      SKIP: no-commit-to-branch
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Run pre-commit hooks
+        run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile survey
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+
+      # Only the beginning of the warnings is matched: TeX wraps long log lines.
+      - name: Check for undefined references and citations
+        run: |
+          if grep -E "Warning: (Reference|Citation) \`|There were undefined (references|citations)" main.log; then
+            echo "::error::The survey has undefined references or citations (see above)."
+            exit 1
+          fi
+
+      - name: Rename PDF
+        run: mv main.pdf neuron_addition_survey.pdf
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: survey-pdf
+          path: neuron_addition_survey.pdf
+
+  publish:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Download PDF artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: survey-pdf
+
+      # Recreate the release so that the survey-latest tag points to the commit
+      # the PDF was built from. The download URL stays the same.
+      - name: Replace the survey-latest release
+        run: |
+          gh release delete survey-latest --cleanup-tag --yes || true
+          gh release create survey-latest neuron_addition_survey.pdf \
+            --target "$GITHUB_SHA" \
+            --latest \
+            --title "Survey (latest build)" \
+            --notes "PDF compiled automatically from the sources at commit $GITHUB_SHA. This release is replaced on every change to the sources."

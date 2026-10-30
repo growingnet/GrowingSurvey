@@ -1,0 +1,67 @@
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+\DeclareMathOperator*{\argmax}{\arg\!\max}
+\DeclareMathOperator*{\SGD}{\text{SGD}}
+\DeclareMathOperator*{\Opt}{\text{Opt}}
+\newcommand\Wnew{\boldsymbol{W}^\textrm{new}}
+\newcommand\Wold{\boldsymbol{W}^\textrm{old}}
+\newcommand\Wupdated{\boldsymbol{W}^\textrm{upd}}
+\newcommand\Hnew{\boldsymbol{h}^\textrm{new}}
+\newcommand\Hold{\boldsymbol{h}^\textrm{old}}
+\newcommand\Znew{\boldsymbol{z}^\textrm{new}}
+\newcommand\Zold{\boldsymbol{z}^\textrm{old}}
+\newcommand\A{\mathcal{A}}
+\newcommand\T{\mathcal{T}}
+\newcommand\D{\mathcal{D}}
+
+
+% Linear algebra commands (matching Typst conventions)
+\newcommand{\trans}[1]{#1^\top}           % Transpose: x^T
+\newcommand{\transp}[1]{\left(#1\right)^\top}  % Transpose with parentheses: (x)^T
+\newcommand{\pinv}[1]{#1^+}               % Pseudoinverse: x^+
+\newcommand{\pinvp}[1]{\left(#1\right)^+} % Pseudoinverse with parentheses: (x)^+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\frob}[1]{\norm{#1}_F} % Frobenius norm with auto-sized delimiters
+\newcommand{\sfrob}[1]{\lVert #1 \rVert_F} % Smaller \frob
+\newcommand{\trace}[1]{\operatorname{Tr}(#1)} % Trace
+
+% Neuron addition notation
+\newcommand{\fanin}{\boldsymbol{\psi}}  % Fan-in weights
+\newcommand{\fanout}{\boldsymbol{\omega}} % Fan-out weights
+\newcommand{\Fanin}{\boldsymbol{\Psi}}  % Fan-in weights
+\newcommand{\Fanout}{\boldsymbol{\Omega}} % Fan-out weights
+
+\newcommand{\postact}[1][]{a^{(#1)}}    % Post-activation
+\newcommand{\preact}[1][]{s^{(#1)}}     % Pre-activation
+\newcommand{\deltas}{\delta_{s}}   % Pre-activation change
+\newcommand{\gradpreact}{\boldsymbol{g}}             % Gradient w.r.t. pre-activation
+\newcommand{\Postact}[1][]{\boldsymbol{a}^{(#1)}}    % Batched post-activation
+\newcommand{\Preact}[1][]{\boldsymbol{z}^{(#1)}}     % Batched pre-activation
+\newcommand{\Gradpreact}{\boldsymbol{G}}             % Batched gradient
+\newcommand{\covpostact}[1][]{\boldsymbol{A}^{(#1)}} % Activation covariance
+\newcommand{\covgrad}{\boldsymbol{S}}                % Gradient covariance
+\newcommand{\Bottleneck}{\boldsymbol{G}^\perp}       % Residual gradient (batched)
+\newcommand{\Bmat}[1][]{\boldsymbol{B}^{(#1)}}       % Gradient-activation cross-covariance
+
+\newcommand{\preactext}{s_{\text{ext}}} % Extended pre-activation
+\newcommand{\postactext}{a_{\text{ext}}} % Extended post-activation
+\newcommand{\Postactext}{\boldsymbol{a_{\text{ext}}}} % Extended batched post-activation
+\newcommand{\Preactext}{\boldsymbol{s_{\text{ext}}}} % Extended batched pre-activation
+\newcommand{\cext}{C_{\text{ext}}}                   % Number of added neurons
+
+\newcommand{\cp}{C_{l}}                       % Size of the layer after the grown one
+\newcommand{\cm}{C_{l-2}}                       % Size of the layer before the grown one
+\newcommand{\loss}{\mathcal{L}}                     % Loss function
+
+\newcommand{\isqrtS}{\boldsymbol{S}^{-1/2}}         % Inverse sqrt of S
+\newcommand{\sqrtS}{\boldsymbol{S}^{1/2}}           %
+\newcommand{\Aext}{\boldsymbol{A}_{\text{ext}}}         % Covariance of extended activations
+\newcommand{\isqrtAext}{\Aext^{-1/2}} % Inverse sqrt of A_ext
+\newcommand{\sqrtAext}{\Aext^{1/2}}
+\newcommand{\sqrtA}{A^{1/2}}
+\newcommand{\scalarp}[1]{\langle #1 \rangle}  % Scalar product
+
+\newcommand{\ie}{\emph{i.e.}}                     % i.e.
+\newcommand{\eg}{\emph{e.g.}}
+
+\newcommand{\dtheta}{d\theta}
+\newcommand{\EE}{\mathbb{E}}

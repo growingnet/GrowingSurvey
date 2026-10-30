@@ -1,0 +1,168 @@
+\documentclass[11pt]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Page layout: change the page margins here.
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Fonts
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% Maths
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+
+% Tables
+\usepackage{array,booktabs,multirow,tabularx,longtable,threeparttable}
+
+% Figures
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{standalone}
+
+% Title block, citations and links
+\usepackage{authblk}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks,allcolors=blue]{hyperref}
+\usepackage{aliascnt}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Custom commands
+
+% Maths shortcuts
+\input{math_commands}
+\setlength{\emergencystretch}{3em}
+
+% Fix typesetting of vector subscripts in SENN section
+\newenvironment{smallpmatrix}
+  {\mkern-2mu\left(\mkern-3mu\begin{smallmatrix}}
+  {\end{smallmatrix}\mkern-3mu\right)}
+
+% Shorthands for Results tables
+\newcommand{\sdag}{\textsuperscript{\dag}}
+\newcommand{\sddag}{\textsuperscript{\ddag}}
+
+% ORCID logo linking to the author's ORCID page
+\definecolor{orcidgreen}{HTML}{A6CE39}
+\newcommand{\orcidlogo}{%
+  \raisebox{-0.1ex}{%
+    \begin{tikzpicture}[scale=1,every node/.style={inner sep=0pt,outer sep=0pt}]
+      \fill[orcidgreen] (0,0) circle (0.45em);
+      \node[white,font=\sffamily\bfseries\tiny] at (0,0) {iD};
+    \end{tikzpicture}%
+  }%
+}
+\DeclareRobustCommand{\orcid}[1]{\,\href{https://orcid.org/#1}{\orcidlogo}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorems
+
+\numberwithin{equation}{section}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+% Proposition, lemma and corollary share the theorem counter; the alias
+% counters make \autoref print the right name.
+\newaliascnt{proposition}{theorem}
+\newtheorem{proposition}[proposition]{Proposition}
+\aliascntresetthe{proposition}
+\providecommand*{\propositionautorefname}{Proposition}
+\newaliascnt{lemma}{theorem}
+\newtheorem{lemma}[lemma]{Lemma}
+\aliascntresetthe{lemma}
+\providecommand*{\lemmaautorefname}{Lemma}
+\newaliascnt{corollary}{theorem}
+\newtheorem{corollary}[corollary]{Corollary}
+\aliascntresetthe{corollary}
+\providecommand*{\corollaryautorefname}{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\theoremstyle{remark}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Title and authors
+
+\title{The Neuron Addition Problem: A Survey on Growing Neural Networks}
+
+\author{Alex~Davey$^*$\orcid{0000-0002-2271-4501}}
+\author{Théo~Rudkiewicz$^*$\orcid{0009-0003-4374-531X}}
+\author{Stéphane~Rivaud\orcid{0000-0002-1363-442X}}
+\author{Stella~Douka\orcid{0009-0002-1088-7568}}
+\author{Félix~Houdouin\orcid{0009-0004-4764-410X}}
+\author{Julien~Mille\orcid{0000-0002-8081-9790}}
+\author{Alena~Shilova\orcid{0000-0002-1795-8421}}
+\author{Guillaume~Charpiat\orcid{0009-0003-6000-9410}}
+\author{Sylvain~Chevallier\orcid{0000-0003-3027-8241}}
+\affil{Université Paris-Saclay, CNRS, INRIA, LISN, Orsay, 91405, France}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+% First-page footnote, marked with *, with the contact e-mails
+{\renewcommand{\thefootnote}{*}\footnotetext{%
+  Equal contribution. Corresponding authors:
+  \href{mailto:alex.davey@inria.fr}{alex.davey@inria.fr},
+  \href{mailto:theo.rudkiewicz@inria.fr}{theo.rudkiewicz@inria.fr}.\\
+  Contributing authors:
+  stephane.a.rivaud@inria.fr,
+  styliani.douka@inria.fr,
+  felix.houdouin@polytechnique.edu,
+  julien.mille@inria.fr,
+  alena.shilova@inria.fr,
+  guillaume.charpiat@inria.fr,
+  sylvain.chevallier@universite-paris-saclay.fr.}}
+
+\begin{abstract}
+\input{subtex/abstract.tex}
+
+\medskip
+\noindent\textbf{Keywords:} Neural networks, Model structure, Optimization, Energy efficiency
+\end{abstract}
+
+\section{Introduction}
+
+\input{subtex/introduction.tex}
+
+\section{How to grow: The neuron addition problem}\label{sec:neuron_addition_problem}
+
+\input{subtex/how.tex}
+
+\section{Where to grow, when to grow, and when to stop}\label{sec:where_when}
+
+\input{subtex/where_when_when.tex}
+
+\section{Beyond width and depth growth}\label{sec:beyond_width_depth}
+
+\input{subtex/beyond.tex}
+
+\section{Non-stationary data distributions}\label{sec:non_stationary}
+
+\input{subtex/continual.tex}
+
+\section{Empirical results}\label{sec:results}
+
+\input{subtex/empirical.tex}
+
+\section{Open Questions and Future Directions}\label{sec:conclusion}
+
+\input{subtex/conclusion.tex}
+
+\input{subtex/acknowledgments_and_contributions.tex}
+
+\newpage
+\appendix
+\section{Proofs}\label{app:proofs}
+\input{subtex/proofs.tex}
+
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+
+\end{document}

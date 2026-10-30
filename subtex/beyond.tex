@@ -1,0 +1,39 @@
+This section considers extensions beyond the width and depth growing setup of the previous section: We discuss the theoretical framework of boosting, which shares many similarities with growth, and also discuss non-trivial network topologies such as sparse networks or growing DAGs. We postpone the application to transformer growth until Sec.~\ref{sec:transformers}, where we provide a self-contained treatment, including empirical results.
+
+
+\subsection{Gradient Boosting as Growth}\label{sec:boosting}
+
+A precursor to modern Neural Network growth, gradient boosting provides a general framework for constructing additive models by iteratively adding weak learners to minimize a given loss function \citep{friedman_greedy_2001}. The weak learners are chosen from a predefined set of functions $\mathcal{H}$. From an optimization perspective, each boosting iteration can be interpreted as a greedy descent step in the functional space spanned by $\mathcal{H}$. The output function $F$ is built as a weighted sum of weak learners:
+$$F(x) = \sum_{m=1}^M \omega_m \gamma_m(x)$$
+where $\gamma_m$ are the weak learners and $\omega_m$ their corresponding weights. The goal is to minimize a loss function $\ell{}(y, F(x))$ over the training data. At iteration $m$, the weak learner $\gamma_m$ and its weight $\omega_m$ are chosen to minimize the loss:
+$$(\gamma_m, \omega_m) = \argmin_{\gamma \in \mathcal{H}, \omega\in\mathbb{R}}  \EE[\ell\left(y, F_{m-1}(x) + \omega \gamma(x)\right)]$$
+where $F_{m-1}$ is the current model.
+Boosting algorithms typically select the weak learner that is maximally aligned with the negative gradient of the loss with respect to the current model's output.
+
+In the context of neural network layer width growth, adding a neuron at layer $l-1$ induces a functional perturbation $\deltas$ of the pre-activation at layer $l$, which can be interpreted as a boosting step, though over a continuous set of possible weak learners.
+Unlike classical boosting methods, except when growth occurs in the last hidden layer, the functional step is added to an intermediate representation.
+Finding the optimal weights for the newly added neurons to match the desired functional variation of the pre-activation at layer $l$ leads to a non-convex optimization problem that is generally NP-hard  \citep{manurangsi2018computationalcomplexitytrainingrelus,bach_breaking_2017} and thus difficult to scale~\citep{liu_splitting_2019}.
+
+\textbf{AdaNet.} Boosting directly inspires AdaNet~\citep{cortesAdaNetAdaptiveStructural2017}, which uses neural networks as weak learners. AdaNet selects candidates using the risk--complexity objective
+\begin{equation}\label{eq:adanet_main}
+F(\mathbf{w}) = \widehat R(\mathbf{w}) + \sum_j \Gamma_j |w_j|,
+\end{equation}
+where \(\widehat R\) is the empirical surrogate risk and \(\Gamma_j\) penalizes the complexity of weak learner \(j\). At each boosting step, new neural networks are trained while previous ones are frozen; the candidate giving the largest reduction in \(F(\mathbf w)\) is added to the ensemble, and the process continues.
+
+\subsection{Sparse growth}\label{sec:sparse_prune_methods}
+
+Sparse masks are frequently employed as a way to select important neurons and prune the rest. However, as discussed in~\citet{dai_incremental_learning_2022}, in order for a model to withstand multiple reduction and growth steps, the performance hit it takes during pruning should be completely recoverable, if not surpassable, by the growth process. The objective of sparse growth is not to reduce the computational cost of inference but rather to increase the network's capabilities while avoiding over-parameterization.
+
+\textbf{Grow-and-Prune.} To perform incremental learning, \citeauthor{dai_incremental_learning_2022} use a gradient-based growth where the gradient of all masked connections is averaged over an epoch, and if it surpasses a specific percentile, they are reactivated. Similarly, they prune or deactivate connections when their weight magnitude is below a specific percentile. This two-step process aims to support long-term learning and outperforms simply training from scratch when new data arrive in both error rate and model size.
+
+\textbf{MorphNet}~\citep{gordon_morphnet_2018} uses a sparsity regularizer to penalize over-parameterization while training and then uniformly expands all layers by scaling their width up to a budget. The sparse training maintains good performance and even improves over simple uniform growth under the same FLOPs, showing the benefit of reduction.
+
+In a similar sparse growth manner \citet{yuan_growing_2021} use masking to start from a very sparse seed architecture and utilize budget-driven sparsity regularization to reduce sparsity, thus growing the network progressively. The method achieves higher accuracy than AutoGrow with smaller models and sparse channels.
+
+\textbf{CompNet}~\citep{lu_CompNet_2018} separately trains and imposes an independently interpretable lasso regularization on the new neurons while optimizing for function-preservation. This sparsity optimization can either be applied to the input or output neurons of the new layer that is inserted in the network.
+
+\subsection{DAG growth}\label{sec:dag_growth}
+
+Most generally, one can consider growing an arbitrary Directed Acyclic Graph (DAG). The structure of a neural network can be represented by a DAG in various ways, depending on the degree of granularity required. In classic works such as NEAT~\citep{stanley_neat_2002}, each vertex represents a single neuron, and the edges represent weights, which are then grown using evolutionary methods. Alternatively, each vertex (or node) can represent an entire layer, as is commonly used as a search space for NAS~\citep{nasbench101}.
+
+The flexibility of a DAG representation does not come without trade-offs, as the number of potential growth operations increases quadratically with the vertex and edge count. To improve on the brute-force strategy of growing every possible node, \citet{douka_growth_2025} propose selecting the node $v \in V$ which maximizes the expressivity bottleneck $v^*=\argmax_{v \in V} \frob{\Bottleneck_v}$, and then only considering growth operations which influence this node $v$, either by expanding that node or adding edges connected to it.

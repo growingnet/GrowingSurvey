@@ -1,0 +1,171 @@
+\makeatletter
+\begin{table}
+\centering
+\caption{Aggregated self-reported results for width-growing methods. $\Delta\textrm{scratch acc.}$ indicates the change in accuracy relative to the final architecture trained from scratch. $\Delta\textrm{baseline acc.}$ indicates the change in test (or validation) accuracy relative to a fixed baseline. $\Delta\textrm{params}$, $\Delta\textrm{final compute}$, $\Delta\textrm{total compute}$, and $\Delta\textrm{runtime}$ indicate changes in final parameter count, final compute, total compute (MACs or FLOPs), and total training time, respectively, expressed as a percentage relative to the baseline.}\label{tab:results_width_growing}
+\fontsize{5pt}{6pt}\selectfont
+\setlength{\tabcolsep}{1pt}
+\noindent
+\begin{tabularx}{\textwidth}{>{\centering\arraybackslash}p{0.05\linewidth}p{0.15\linewidth}p{0.10\linewidth}X>{\centering\arraybackslash}p{0.09\linewidth}>{\centering\arraybackslash}p{0.09\linewidth}>{\centering\arraybackslash}p{0.09\linewidth}>{\centering\arraybackslash}p{0.08\linewidth}>{\centering\arraybackslash}p{0.08\linewidth}>{\centering\arraybackslash}p{0.09\linewidth}}
+\toprule
+\multicolumn{1}{>{\centering\arraybackslash}m{0.05\linewidth}}{} &
+\multicolumn{1}{m{0.15\linewidth}}{Method} &
+\multicolumn{1}{m{0.10\linewidth}}{Dataset} &
+\multicolumn{1}{m{\TX@col@width}}{Baseline\newline Architecture} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.09\linewidth}}{$\Delta$ scratch acc. (pp)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.09\linewidth}}{$\Delta$ baseline acc. (pp)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.09\linewidth}}{$\Delta$ params (\%)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.08\linewidth}}{$\Delta$ final compute (\%)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.08\linewidth}}{$\Delta$ total compute (\%)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.09\linewidth}}{$\Delta$ runtime (\%)} \\
+\midrule
+\multirow[c]{18}{=}{\centering\rotatebox[origin=c]{90}{\scriptsize Fixed final arch.}}
+ & Net2Net & ImageNet & Inception-BN      & -0.1\sdag\sddag & --              & 0.0          & 0.0 & -- & -- \\
+\cmidrule{2-10}
+ & GradMax & CIFAR-10  & VGG-11       & -2.2 & -- & 0.0 & 0.0 & -- & -- \\
+ & GradMax & CIFAR-10  & WRN-28-1     & -1.8 & -- & 0.0 & 0.0 & -- & -- \\
+ & GradMax & CIFAR-100 & WRN-28-1     & -2.5 & -- & 0.0 & 0.0 & -- & -- \\
+ & GradMax & ImageNet  & MobileNet-V1 & -2.2 & -- & 0.0 & 0.0 & -- & -- \\
+\cmidrule{2-10}
+ & TINY & CIFAR-100 & ResNet-18 & -2.5 & -- & 0.0 & 0.0 & 0.0  & -- \\
+\cmidrule{2-10}
+ & Variance Transfer & CIFAR-10  & VGG-11      & +0.2 & -- & 0.0 & 0.0 & -47.1 & -- \\
+ & Variance Transfer & CIFAR-10  & ResNet-20   & -0.1 & -- & 0.0 & 0.0 & -45.1 & -- \\
+ & Variance Transfer & CIFAR-10  & MobileNetV1 & -0.3 & -- & 0.0 & 0.0 & -46.2 & -- \\
+ & Variance Transfer & CIFAR-100 & VGG-19      & +0.7 & -- & 0.0 & 0.0 & -47.9 & -- \\
+ & Variance Transfer & CIFAR-100 & ResNet-18   & -0.2 & -- & 0.0 & 0.0 & -47.4 & -14.3 \\
+ & Variance Transfer & CIFAR-100 & MobileNetV1 & -0.6 & -- & 0.0 & 0.0 & -47.1 & -- \\
+ & Variance Transfer & ImageNet  & ResNet-50   & -0.8 & -- & 0.0 & 0.0 & -39.9 & -- \\
+ & Variance Transfer & ImageNet  & MobileNetV1 & -0.9 & -- & 0.0 & 0.0 & -36.3 & -- \\
+\midrule
+\multirow[c]{11}{=}{\centering\rotatebox[origin=c]{90}{\scriptsize Adaptive}}
+ & Splitting S2D & CIFAR-10 & VGG-19      & -- & -0.1\sdag\sddag & -85.0\sdag & -- & -- & -- \\
+ & Splitting S2D & CIFAR-10 & MobileNetV1 & -- & +1.2\sdag\sddag & -88.0\sdag & -- & -- & -- \\
+\cmidrule{2-10}
+ & Splitting S2D-E & CIFAR-100 & MobileNetV1   & -- & +1.7\sdag\sddag & -- & -34.0\sdag & -- & -- \\
+ & Splitting S2D-E & ImageNet  & MobileNetV1   & -- & +1.0\sddag & -- & -1.4  & -- & -- \\
+ & Splitting S2D-E & ImageNet  & MobileNetV2   & -- & +0.8\sddag & -- & -0.7  & -- & -- \\
+\cmidrule{2-10}
+ & Splitting S3D   & CIFAR-100 & MobileNetV1   & -- & +1.2\ddag & -90.9 & -21.7 & -- & -- \\
+ & Splitting S3D   & ImageNet  & MobileNetV1   & -- & +1.2\ddag & --    & -1.9  & -- & -- \\
+ & NORTH           & CIFAR-10  & VGG-11        & -- & +0.4\sdag & -65.9\sdag & -- & -- & -- \\
+ & NORTH           & CIFAR-10  & WideResNet-28 & -- & -0.3\sdag & -16.8\sdag & -- & -- & -- \\
+ & NORTH           & CIFAR-100 & VGG-11        & -- & +0.8\sdag & -68.0\sdag & -- & -- & -- \\
+\bottomrule
+\end{tabularx}
+\begin{tablenotes}[flushleft]
+\footnotesize
+\item[\sdag] Results derived from plots rather than tabulated values.
+\item[\sddag] Grown networks are optimized for significantly more gradient steps than the baseline.
+\end{tablenotes}
+\end{table}
+
+\begin{table}
+\centering
+\caption{Aggregated self-reported results for depth-growing methods. See the caption of Table~\ref{tab:results_width_growing} for definitions of each metric. }\label{tab:results_depth_growing}
+\fontsize{5pt}{6pt}\selectfont
+\setlength{\tabcolsep}{1pt}
+\noindent
+\begin{tabularx}{\textwidth}{>{\centering\arraybackslash}p{0.05\linewidth}p{0.11\linewidth}p{0.14\linewidth}X>{\centering\arraybackslash}p{0.10\linewidth}>{\centering\arraybackslash}p{0.10\linewidth}>{\centering\arraybackslash}p{0.07\linewidth}>{\centering\arraybackslash}p{0.07\linewidth}>{\centering\arraybackslash}p{0.07\linewidth}>{\centering\arraybackslash}p{0.07\linewidth}}
+\toprule
+\multicolumn{1}{>{\centering\arraybackslash}m{0.05\linewidth}}{} &
+\multicolumn{1}{m{0.11\linewidth}}{Method} &
+\multicolumn{1}{m{0.14\linewidth}}{Dataset} &
+\multicolumn{1}{m{\TX@col@width}}{Baseline\newline Architecture} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.10\linewidth}}{$\Delta$ scratch acc. (pp)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.10\linewidth}}{$\Delta$ baseline acc. (pp)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.07\linewidth}}{$\Delta$ params (\%)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.07\linewidth}}{$\Delta$ final compute (\%)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.07\linewidth}}{$\Delta$ total compute (\%)} &
+\multicolumn{1}{>{\centering\arraybackslash}m{0.07\linewidth}}{$\Delta$ runtime (\%)} \\
+\midrule
+\multirow[c]{16}{=}{\centering\rotatebox[origin=c]{90}{\scriptsize Fixed final arch.}}
+ & Net2Net & ImageNet & Inception-BN & 0.0\sdag\sddag & -- & 0.0\sddag & -- & -- & -- \\
+\cmidrule{2-10}
+ & LipGrow & CIFAR-10     & ResNet-50 & -0.6 & -- & 0.0 & -- & -56.6${}^*$ & -- \\
+ & LipGrow & CIFAR-10     & ResNet-74 & -0.3 & -- & 0.0 & -- & -53.0${}^*$ & -44.8\sdag \\
+ & LipGrow & CIFAR-100    & ResNet-50 & +0.3 & -- & 0.0 & -- & -46.1${}^*$ & -- \\
+ & LipGrow & CIFAR-100    & ResNet-74 & -0.4 & -- & 0.0 & -- & -53.0${}^*$ & -- \\
+ & LipGrow & TinyImageNet & ResNet-66 & +0.7 & -- & 0.0 & -- & -47.8${}^*$ & -- \\
+\cmidrule{2-10}
+ & FRAGrow & CIFAR-10 & VGG           & 0.0  & -- & 0.0 & -- & --    & -18.4 \\
+ & FRAGrow & CIFAR-10 & ResNet        & +0.3 & -- & 0.0 & -- & --    & -17.6 \\
+ & FRAGrow & CIFAR-10 & MobileNetV2   & -0.4 & -- & 0.0 & -- & --    & -20.6 \\
+ & FRAGrow & CIFAR-100 & VGG          & +0.4 & -- & 0.0 & -- & --    & -16.0 \\
+ & FRAGrow & CIFAR-100 & ResNet       & +0.4 & -- & 0.0 & -- & --    & -20.1 \\
+ & FRAGrow & CIFAR-100 & MobileNetV2  & 0.0  & -- & 0.0 & -- & --    & -26.2 \\
+ & FRAGrow & ImageNet & VGG           & -0.2 & -- & 0.0 & -- & --    & -11.2 \\
+ & FRAGrow & ImageNet & ResNet        & -0.2 & -- & 0.0 & -- & --    & -10.0 \\
+ & FRAGrow & ImageNet & MobileNetV2   & -0.5 & -- & 0.0 & -- & --    & -6.3  \\
+\midrule
+\multirow[c]{8}{=}{\centering\rotatebox[origin=c]{90}{\scriptsize Adaptive}}
+ & AutoGrow & CIFAR-10  & ResNet-56 (3 stage)          & 0.0   & +0.4 & +374.9      & -- & --          & -- \\
+ & AutoGrow & CIFAR-10  & ResNet (4 stage)             & -0.1  & --   & --          & -- & --          & -- \\
+ & AutoGrow & CIFAR-10  & PlainNet (3 stage)           & +6.5  & --   & --          & -- & --          & -- \\
+ & AutoGrow & CIFAR-10  & PlainNet (4 stage)           & +5.7  & --   & --          & -- & --          & -- \\
+ & AutoGrow & CIFAR-100 & ResNet (3 stage)             & -1.0  & --   & --          & -- & --          & -- \\
+ & AutoGrow & CIFAR-100 & ResNet (4 stage)             & +1.2  & --   & --          & -- & --          & -- \\
+ & AutoGrow & CIFAR-100 & PlainNet (3 stage)           & +31.5 & --   & --          & -- & --          & -- \\
+ & AutoGrow & CIFAR-100 & PlainNet (4 stage)           & +29.3 & --   & --          & -- & --          & -- \\
+ & AutoGrow & ImageNet  & ResNet-34 (4 stage)          & +0.4  & +3.0\sdag & +214.2\sdag & +198.1\sdag & -- & -- \\
+ & AutoGrow & ImageNet  & PlainNet (4 stage)           & +0.7  & --   & --          & -- & --          & -- \\
+\bottomrule
+\end{tabularx}
+\begin{tablenotes}[flushleft]
+\footnotesize
+\item[\sdag] Results derived from plots rather than tabulated values.
+\item[\sddag] Grown networks are optimized for significantly more gradient steps than the baseline.
+\item[${}^*$] LipGrow's $\Delta$total compute is reported using the non-standard PPE (parameters-per-epoch) metric, but for the specific doubling architecture of LipGrow this is almost identical to the change in total MACs.
+\end{tablenotes}
+\end{table}
+\makeatother
+
+In addition to applications to specific contexts such as non-stationary data distributions, the most commonly cited motivations in the supervised learning setting are:
+\begin{itemize}
+    \item \textbf{Optimization benefits}, e.g., due to regularisation: growth may improve final performance relative to training the final architecture from scratch.
+    \item \textbf{Frugality} in terms of reduced runtime, computational cost, or final parameter count.
+    \item \textbf{Architecture adaptation}, either to the task or offering an adjustable trade-off between performance and some notion of e.g. complexity or computational cost.
+\end{itemize}
+Here we re-examine the key growing methods, and ask whether they do in fact satisfy these motivations.
+We aggregate the self-reported results for the largest classes of growing algorithms, width growing (Table~\ref{tab:results_width_growing}) and depth growing (Table~\ref{tab:results_depth_growing}). We include all surveyed methods that grow exclusively width or depth on image classification (CIFAR-10, CIFAR-100, TinyImageNet, ImageNet), and that provide both numerical baseline references and numerical entries compatible with our set of reported metrics.
+
+To reduce the impact of differences in hyperparameters and experimental setups, we report only the relative changes in the following metrics: $\Delta \textrm{scratch acc.}$ indicates the percentage point change in accuracy relative to retraining the final architecture from scratch. $\Delta \textrm{baseline acc.}$ indicates the change in accuracy relative to the baseline architecture indicated in the Baseline Architecture column. This is only relevant for the adaptive architecture methods, which may compare to a reference architecture different from the final one. $\Delta \textrm{params}$, $\Delta\textrm{final compute}$ and $\Delta\textrm{total compute}$ indicate changes in final parameter count, final compute and total compute (MACs or FLOPs), respectively, while $\Delta\textrm{runtime}$ indicates total training runtime. All of these figures are expressed as a percentage relative to the baseline.
+
+\subsection{Optimization benefits}
+By comparing the performance of the final grown model to that of the same architecture trained from scratch (without growth), $\Delta\textrm{scratch acc.}$ provides a relatively clean ablation for the optimization or regularisation effects of growth. Width-growing to a fixed final architecture rarely yields a positive $\Delta\textrm{scratch acc.}$ improvement. Net2Net, the oldest method, trains for a total of twice the epochs of the baseline, which likely contributes to its relatively strong performance compared to newer methods, which all keep the number of epochs fixed. Later methods generally improve on Net2Net in a matched-epoch setting. In general, width-growing is only able to improve from-scratch performance on older or harder-to-optimize architectures such as Inception and VGG.
+
+This is also visible in the depth-growing results~\autoref{tab:results_depth_growing}, where the most significant $\Delta\textrm{scratch acc.}$ results are for the PlainNet architectures (ResNet architectures without the residual connections).
+In general, depth-growing can match and occasionally slightly improve performance, even with newer ResNet architectures. Such gains have been attributed to the regularising effect of growth~\cite{wu_when_2024}. This is consistent with the depth-growing discussion of Sec.~\ref{sec:where_when}: growth timing can act as a regularizer to control over/underfitting.
+
+\subsection{Frugality}
+To gauge frugality, we compare the change in final parameters ($\Delta\textrm{params}$), final and total compute ($\Delta\textrm{final compute}$ and $\Delta\textrm{total compute}$), and total training runtime ($\Delta\textrm{runtime}$).
+
+For width-growing convolutional networks, FLOPs and MACs scale with both input and output channels, so reduced channel counts can produce large $\Delta\textrm{final compute}$ reductions. However, this does not straightforwardly translate into reductions in runtime (or energy), as parameters such as the batch size are tuned for the large models and need to be adapted to the smaller one. As a case study, Variance Transfer~\citep{yuan_accelerated_2023} observes a mere 14.3\% runtime reduction when growing a ResNet-18 on CIFAR-100, despite reducing total FLOPs by 47.4\% (see Table~\ref{tab:results_width_growing}). As a remedy, they propose adapting the batch size to maximize GPU memory usage and achieve a 40\% runtime reduction for a negligible change in final accuracy. However, large-batch training often results in poor generalization performance~\citep{keskar_large-batch_2017} and therefore may not be generally applicable.
+
+In contrast, since compute and runtime scale approximately linearly with the number of layers, depth growth translates more directly into runtime savings (up to 45\% in Table~\ref{tab:results_depth_growing}).
+
+Although many methods report accuracy metrics, they often do not comprehensively report training times. This is the case of e.g. GradMax~\citep{evci_gradmax_2022}, despite explicitly aiming to reduce training time. Such missing timings are indicated by a dash.
+
+\subsection{Architecture adaptation}
+
+The empirical evidence for growth as a form of architecture adaptation is much less complete: for width-growth, the splitting family of methods~\citep{liu_splitting_2019,wang_energy-aware_2020,wu_steepest_2021} is able to find significantly smaller architectures that outperform the standard baselines, as measured by $\Delta \textrm{baseline acc.}$, suggesting that the channel widths in the standard architectures benefit from task-specific tuning. However, as they do not also compare training from scratch ($\Delta \textrm{scratch acc.}$), it is difficult to disentangle from the optimization effects of growth, especially as they retrain for the total number of epochs after each split, leading to a much larger total training budget than the baselines.
+
+For depth-growth, few comparisons to standard architectures are available. AutoGrow~\citep{wen_autogrow_2020} achieves improved performance with a similar or reduced training compute, but the final architecture has very large parameter counts. By comparing with the depth-growing methods with a fixed final architecture, this suggests that while it benefits from the computational savings of depth growth, the final architecture found does not appear to improve in terms of performance-complexity over the standard hand-designed ResNet family. However, a more thorough experimental evaluation of adaptive depth growing methods would be needed to conclude this decisively.
+
+
+\subsection{Transformer results}\label{sec:results_transformers}
+
+Transformers provide large-scale empirical validation of growing methods.
+In general, the motivation is frugality: reduced training cost with a fixed target architecture, sometimes termed \emph{progressive learning} in this context~\citep{li_autoprog_2022,yao_msg_2024}.
+These studies test whether the empirical conclusions of the previous section generalize to the billion-parameter scale.
+
+\textbf{What works.} The large-scale study~\citep{du_stacking_2024} demonstrates that depthwise stacking reduces the number of training tokens needed to reach the same loss by 35.3\% when training a 7B parameter model. Compound growth~\citep{gu_bert_2021}, expanding depth, width, and sequence length simultaneously, reduces BERT training time by 42.4--45.1\%. At smaller scales, MSG~\citep{yao_msg_2024} reduces BERT-Large training time by 54.5\%, and AutoProg~\citep{li_autoprog_2022} reduces Vision Transformer training time by up to 46.0\%. These results establish growing methods as a practical, frugal alternative to training from scratch in the evaluated settings.
+
+Similar to the width growing results of the previous section, \citet{du_stacking_2024} report modest speedups from width growth alone. However, recent results from SPARKLING show that width growth can be effective if performed sufficiently late during training, indicating the importance of \emph{when to grow} in the transformer setting~\citep{yu_sparkling_2026}.
+
+\textbf{Function preservation.} MSG~\citep{yao_msg_2024} achieves strong results using strict function preservation, while AutoProg's ReZero-based identity-insertion ablation~\citep{li_autoprog_2022} reduces Vision Transformer performance by 3.21 percentage points relative to the fixed-model baseline. Most strikingly, simple stacking~\citep{du_stacking_2024}--which is not function-preserving--achieves the best results among the operators in the 1.1B comparison and remains effective at 7B.
+
+\textbf{Optimization benefits.} Growth can also have optimization benefits beyond a reduction in training cost.
+Stacking studies report improved task performance, particularly on reasoning tasks, even at matched perplexity~\citep{saunshi_inductive_2024,kapl2025depthgrownmodelsovercomecurse}.
+One proposed explanation concerns the ``curse of depth'', whereby many layers in the latter half of a transformer contribute little to its output~\citep{sun_curse_of_depth_2025}, and it has been suggested that depth growth mitigates this behavior~\citep{kapl2025depthgrownmodelsovercomecurse}.
+
+These experiments validate growing methods as a frugal training strategy at scale, but expose limits in current understanding. A significant scale gap remains: at the time of writing, the majority of the experiments are at most 8B parameters, while production language models exceed 70B.
